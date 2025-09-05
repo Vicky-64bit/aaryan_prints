@@ -1,10 +1,7 @@
-import React, { useEffect, useState, useRef } from "react";
-import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import { Link } from "react-router-dom";
+import React, { useState } from 'react';
 
-const NewArrivals = () => {
-
-  const products = [
+// Mock product data to populate the carousel
+const products = [
   {
     id: 1,
     image: 'https://placehold.co/400x500/E5E7EB/1F2937?text=Product+1',
@@ -62,45 +59,41 @@ const NewArrivals = () => {
     price: '₹ 1999',
   },
 ];
-    const [startIndex, setStartIndex] = useState(0);
-    const itemsPerPage = 4;
-    const totalItems = products.length;
-  
-    const handleNext = () => {
-      if (startIndex + itemsPerPage < totalItems) {
-        setStartIndex(prevIndex => prevIndex + 1);
-      }
-    };
-  
-    const handlePrev = () => {
-      if (startIndex > 0) {
-        setStartIndex(prevIndex => prevIndex - 1);
-      }
-    };
-  
-    const visibleProducts = products.slice(startIndex, startIndex + itemsPerPage);
 
 
-  return <section className="my-4 lg:px-0 my-1" >
-  <div className="bg-white lg:px-0 mb-[2px] flex justify-center items-center w-screen h-fit">
-      <div className="w-full flex justify-center items-center h-fit   font-sans text-gray-800">
-        <div className="w-full max-w-7xl bg-white">
-        <div className="relative mb-10">
-            {/* Title and Subtitle */}
-          <div className="text-center mb-10 ">
-            <h2 className="text-4xl font-light mb-2">Explore New Arrivals</h2>
-            <p className="text-sm text-gray-500">Get the latest styles</p>
-           
+const Recommendations = () => {
+  const [startIndex, setStartIndex] = useState(0);
+  const itemsPerPage = 4;
+  const totalItems = products.length;
+
+  const handleNext = () => {
+    if (startIndex + itemsPerPage < totalItems) {
+      setStartIndex(prevIndex => prevIndex + 1);
+    }
+  };
+
+  const handlePrev = () => {
+    if (startIndex > 0) {
+      setStartIndex(prevIndex => prevIndex - 1);
+    }
+  };
+
+  const visibleProducts = products.slice(startIndex, startIndex + itemsPerPage);
+
+  return (
+    <div className="py-2 px-4 lg:px-0 mb-[2px] bg-white flex justify-center items-center w-screen h-fit">
+      <div className="w-[100%] flex justify-center items-center h-fit  bg-gray-200 font-sans text-gray-800 p-4">
+        <div className="w-full max-w-7xl mx-2 bg-gray-200">
+            <div className="relative mb-10">
+          {/* Title and Subtitle */}
+          <div className="text-center mb-10">
+            <h2 className="text-4xl font-light mb-2">Recommended For You</h2>
+            <p className="text-sm text-gray-500">Based On Your Recent Activity</p>
           </div>
-           <button className="absolute right-4 top-1/2 -translate-y-1/2 bg-white rounded-full shadow-lg text-sm font-semibold text-gray-800 px-6 py-2 whitespace-nowrap">
+          <button className="absolute right-4 top-1/2 -translate-y-1/2 bg-white rounded-full shadow-lg text-sm font-semibold text-gray-800 px-6 py-2 whitespace-nowrap">
     View All
   </button>
-           
-            </div>
-          
-          
-          <div className="w-[full]  px-4  bg-gray-200">
-          
+          </div>
 
           {/* Carousel Container */}
           <div className="relative">
@@ -180,16 +173,10 @@ const NewArrivals = () => {
             </button>
           </div>
         </div>
-        </div>
-        
       </div>
     </div>
-  ;
-
-
-
-
-  </section>
+  );
 };
 
-export default NewArrivals;
+
+export default Recommendations;
