@@ -1,21 +1,88 @@
-import React from 'react'
+import React, { useState } from 'react';
 import heroImg from "../../assets/rabbit-hero.webp";
-import { Link } from 'react-router-dom';
+
+// Mock banner images for the hero section
+const bannerImages = [
+  'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Y2xvdGhlc3xlbnwwfHwwfHx8MA%3D%3D',
+  'https://placehold.co/1200x600/E3F2FD/003366?text=Hero+Banner+2',
+  'https://placehold.co/1200x600/B97E5B/FFFFFF?text=Hero+Banner+3',
+];
 
 const Hero = () => {
-  return (
-    <section className='relative' >
-        <img src={heroImg} alt="" className='w-full h-[400px] md:h-[600px] lg:h-[750px] object-cover' />
-        <div className="absolute inset-0 bg-black/5 flex items-center justify-center">
-            <div className="text-center text-white p-6" >
-                <h1 className="text-4xl md:text-9xl font-bold tracking-tighter upeercase mb-4" >Vacation<br /> Ready</h1>
-                <p className='text-sm tracking-tighter md:text-lg mb-6' >Explore our vacation ready outfits with fast worldwide shipping.</p>
-                <Link to="#" className='bg-white text-gray-950 px-6 py-2 rounded-sm text-lg'>Shop Now</Link>
-            </div>
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-        </div>
-    </section>
-  )
-}
+  const handlePrev = () => {
+    setCurrentImageIndex((prevIndex) => 
+      prevIndex === 0 ? bannerImages.length - 1 : prevIndex - 1
+    );
+  };
+
+  const handleNext = () => {
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex === bannerImages.length - 1 ? 0 : prevIndex + 1
+    );
+  };
+
+  const goToImage = (index) => {
+    setCurrentImageIndex(index);
+  };
+
+  return (
+    <div className="relative w-full h-screen overflow-hidden">
+      {/* Background Image */}
+      <img
+        src={bannerImages[currentImageIndex]}
+        alt={`Hero Banner ${currentImageIndex + 1}`}
+        className="w-full h-full object-cover transition-opacity duration-500 ease-in-out"
+      />
+
+      {/* Hero Content Overlay */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-4">
+        <h1 className="text-4xl lg:text-6xl font-bold mb-4">NEW IN</h1>
+        <button className="border-2 border-white text-white px-8 py-3 rounded-full font-semibold hover:bg-white hover:text-orange-500 transition-colors duration-300">
+          SHOP FRESH STYLES
+        </button>
+      </div>
+
+      {/* Navigation Arrows */}
+      <div className="absolute inset-y-0 left-0 flex items-center">
+        <button
+          onClick={handlePrev}
+          className="p-2 bg-gray-800 bg-opacity-50 text-white rounded-full ml-4 focus:outline-none hover:bg-opacity-75 transition-colors"
+          aria-label="Previous"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+          </svg>
+        </button>
+      </div>
+      <div className="absolute inset-y-0 right-0 flex items-center">
+        <button
+          onClick={handleNext}
+          className="p-2 bg-gray-800 bg-opacity-50 text-white rounded-full mr-4 focus:outline-none hover:bg-opacity-75 transition-colors"
+          aria-label="Next"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Dot Indicators */}
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+        {bannerImages.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => goToImage(index)}
+            className={`w-3 h-3 rounded-full transition-colors duration-300 ${
+              index === currentImageIndex ? 'bg-white' : 'bg-gray-400'
+            }`}
+            aria-label={`Go to slide ${index + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export default Hero
