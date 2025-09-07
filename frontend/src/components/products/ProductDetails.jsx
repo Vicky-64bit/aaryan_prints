@@ -258,6 +258,20 @@ const ProductDetails = () => {
             <h2 className="text-2xl text-center font-medium mb-4">
                 You May Also Like
             </h2>
+            
+            <ProductGrid products={ similarProducts }/>
+            </div>
+
+            <div className="mt-15">
+            <h2 className="text-2xl text-center font-medium mb-4">
+                More Like This
+            </h2>
+            <ProductGrid products={ similarProducts }/>
+        </div>
+            <div className="mt-15">
+            <h2 className="text-2xl text-center font-medium mb-4">
+                Frequently Bought Together
+            </h2>
             <ProductGrid products={ similarProducts }/>
         </div>
     </div>

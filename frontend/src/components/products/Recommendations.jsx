@@ -82,7 +82,7 @@ const Recommendations = () => {
 
   return (
     <div className="py-2 px-4 lg:px-0 mb-[2px] bg-white flex justify-center items-center w-screen h-fit">
-      <div className="w-[100%] flex justify-center items-center h-fit  bg-gray-200 font-sans text-gray-800 p-4">
+      <div className="w-[95%] flex justify-center items-center h-fit  bg-gray-200 font-sans text-gray-800 p-4">
         <div className="w-full max-w-7xl mx-2 bg-gray-200">
             <div className="relative mb-10">
           {/* Title and Subtitle */}

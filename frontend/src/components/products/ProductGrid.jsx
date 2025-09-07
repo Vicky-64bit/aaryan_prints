@@ -46,7 +46,7 @@ const ProductGrid = ({ products = [] }) => {
         {/* Prev Button */}
         <button
           onClick={handlePrev}
-          className={`absolute top-1/2 left-0 transform -translate-x-1/2 -translate-y-1/2 z-10 p-2 bg-white rounded-full shadow-lg ${
+          className={`absolute top-1/2 left-0 transform -translate-x-1/2 -translate-y-1/2 z-10 p-4  bg-amber-300 rounded-r-full shadow-lg ${
             startIndex === 0 ? "hidden" : ""
           }`}
           aria-label="Previous"
@@ -139,7 +139,7 @@ const ProductGrid = ({ products = [] }) => {
         {/* Next Button */}
         <button
           onClick={handleNext}
-          className={`absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 z-10 p-2 bg-white rounded-full shadow-lg ${
+          className={`absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 z-10 p-4  bg-amber-300 rounded-l-full  shadow-lg ${
             startIndex + itemsPerPage >= totalItems ? "hidden" : ""
           }`}
           aria-label="Next"
