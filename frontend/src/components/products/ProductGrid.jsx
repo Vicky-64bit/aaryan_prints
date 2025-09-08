@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
-const ProductGrid = ({ products = [] }) => {
+
+const ProductGrid = ({ products}) => {
   const [startIndex, setStartIndex] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(4);
 
@@ -42,11 +44,11 @@ const ProductGrid = ({ products = [] }) => {
 
   return (
     <div>
-      <div className="relative">
+      <div className="relative w-full max-w-[90%] mx-auto mb-2">
         {/* Prev Button */}
         <button
           onClick={handlePrev}
-          className={`absolute top-1/2 left-0 transform -translate-x-1/2 -translate-y-1/2 z-10 p-4  bg-amber-300 rounded-r-full shadow-lg ${
+          className={`absolute top-1/2 left-0 transform -translate-x-1/4 -translate-y-1/2 z-10 p-4  bg-amber-300 rounded-r-full shadow-lg ${
             startIndex === 0 ? "hidden" : ""
           }`}
           aria-label="Previous"
@@ -69,9 +71,10 @@ const ProductGrid = ({ products = [] }) => {
         </button>
 
         {/* Products */}
-        <div className="flex space-x-2.5 overflow-hidden pr-6 py-2">
+        <div className="mx-auto flex justify-center space-x-2.5 overflow-hidden p-4">
           {visibleProducts.map((product) => (
-            <div
+             <Link
+                    to={`/product/${product.id}`}
               key={product.id}
               className="group flex-shrink-0 
                          w-full sm:w-1/2 md:w-1/3 lg:w-1/4 
@@ -81,9 +84,9 @@ const ProductGrid = ({ products = [] }) => {
                          transform hover:scale-105"
             >
               <div className="relative h-auto">
-                {product.image ? (
+                {product.images ? (
                   <img
-                    src={product.image}
+                    src={product.images[0]?.url}
                     alt={product.title}
                     className="w-full h-[300px] object-cover rounded-t-xl"
                   />
@@ -127,19 +130,19 @@ const ProductGrid = ({ products = [] }) => {
 
               <div className="p-4">
                 <h3 className="text-xs font-semibold uppercase text-gray-400">
-                  {product.title}
+                  {product.brand}
                 </h3>
                 <p className="mt-1 text-sm">{product.description}</p>
                 <p className="mt-2 text-lg font-bold">{product.price}</p>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 
         {/* Next Button */}
         <button
           onClick={handleNext}
-          className={`absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 z-10 p-4  bg-amber-300 rounded-l-full  shadow-lg ${
+          className={`absolute top-1/2 right-0 transform translate-x-1/4 -translate-y-1/2 z-10 p-4  bg-amber-300 rounded-l-full  shadow-lg ${
             startIndex + itemsPerPage >= totalItems ? "hidden" : ""
           }`}
           aria-label="Next"

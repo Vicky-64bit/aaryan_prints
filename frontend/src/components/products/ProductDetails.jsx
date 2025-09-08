@@ -1,35 +1,10 @@
 import React, { useEffect, useState } from "react";
 import {toast} from "sonner";
+import { useParams } from "react-router-dom";  // ✅ get productId from URL
+import products from "../common/products";       // ✅ import static products
 import ProductGrid from "./ProductGrid";
 
-const selectedProduct = {
-  name: "Stylish Jacket",
-  price: 120,
-  originalPrice: 150,
-  description: "This is a stylish javket perfect for any ocassion",
-  brand: "AaryanPrints",
-  material: "leather",
-  sizes: ["S", "M", "L", "XL"],
-  colors: ["Red", "Black"],
-  images: [
-    {
-      url: "https://media.istockphoto.com/id/1061746720/photo/young-man-business-casual-fashion-in-new-york.jpg?s=612x612&w=0&k=20&c=zvoy_JZXIqRtbUCmdUMeNPMlcgDZyDYqs999JE8j_Eg=",
-      altText: "Stylish Jacket 1",
-    },
-    {
-      url: "https://media.istockphoto.com/id/1776475600/photo/indoor-portrait-of-a-stylish-man.jpg?s=612x612&w=0&k=20&c=L0fyDwWbBVKbq995_0SQi5El_ufbnmvBYS_2V6XKDyk=",
-      altText: "Stylish Jacket 2",
-    },
-    {
-      url: "https://media.istockphoto.com/id/1061746720/photo/young-man-business-casual-fashion-in-new-york.jpg?s=612x612&w=0&k=20&c=zvoy_JZXIqRtbUCmdUMeNPMlcgDZyDYqs999JE8j_Eg=",
-      altText: "Stylish Jacket 3",
-    },
-    {
-      url: "https://media.istockphoto.com/id/1061746720/photo/young-man-business-casual-fashion-in-new-york.jpg?s=612x612&w=0&k=20&c=zvoy_JZXIqRtbUCmdUMeNPMlcgDZyDYqs999JE8j_Eg=",
-      altText: "Stylish Jacket 4",
-    },
-  ],
-};
+
 
 const similarProducts = [
   {
@@ -91,6 +66,17 @@ const similarProducts = [
 ];
 
 const ProductDetails = () => {
+    const { id } = useParams(); // ✅ get ID from route
+  const selectedProduct = products.find((p) => p.id === parseInt(id)); // ✅ find product
+  
+if (!selectedProduct) {
+  return (
+    <div className="text-center text-red-500 mt-20 text-xl">
+      ⚠️ Product not found
+    </div>
+  );
+}
+
   const [mainImage, setMainImage] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
@@ -125,7 +111,7 @@ const ProductDetails = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto bg-white p-8 rounded-lg">
+    <div className="max-w-6xl mt-28 mx-auto bg-white p-8 rounded-lg">
       <div className="flex flex-col md:flex-row">
         {/* left Thumbnail  */}
         <div className="hidden md:flex flex-col space-y-4 mr-6">
@@ -259,20 +245,20 @@ const ProductDetails = () => {
                 You May Also Like
             </h2>
             
-            <ProductGrid products={ similarProducts }/>
+            <ProductGrid products={ products }/>
             </div>
 
             <div className="mt-15">
             <h2 className="text-2xl text-center font-medium mb-4">
                 More Like This
             </h2>
-            <ProductGrid products={ similarProducts }/>
+            <ProductGrid products={ products }/>
         </div>
             <div className="mt-15">
             <h2 className="text-2xl text-center font-medium mb-4">
                 Frequently Bought Together
             </h2>
-            <ProductGrid products={ similarProducts }/>
+            <ProductGrid products={ products }/>
         </div>
     </div>
   );
