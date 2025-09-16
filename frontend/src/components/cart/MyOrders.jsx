@@ -54,7 +54,8 @@ const MyOrders = () => {
   }
 
   return (
-    <div className="mt-28 mb-4p-4 sm:p-6 md:p-8">
+    <div className="bg-gray-200 p-6 rounded-2xl shadow-sm">
+    <div className=" mb-4p-4 sm:p-6 md:p-8">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">My Orders</h2>
       <div className="space-y-4">
         {orders.map(order => (
@@ -95,6 +96,7 @@ const MyOrders = () => {
             </div>
           </div>
         ))}
+      </div>
       </div>
     </div>
   );

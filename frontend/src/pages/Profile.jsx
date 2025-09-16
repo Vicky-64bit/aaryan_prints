@@ -1,17 +1,42 @@
-import React, { useState } from 'react';
-import { BiUser, BiHeart, BiMap, BiCreditCard, BiListOl, BiInfoCircle, BiSupport, BiLogOut } from 'react-icons/bi';
+import React, { useState } from "react";
+import {
+  BiUser,
+  BiHeart,
+  BiMap,
+  BiCreditCard,
+  BiListOl,
+  BiInfoCircle,
+  BiSupport,
+  BiLogOut,
+  BiMenu,
+  BiX,
+} from "react-icons/bi";
 
-// Component for the Profile Details content
+import MyOrders from "../components/cart/MyOrders";
+import Wishlist from "../components/cart/wishlist";
+import Addresses from "./Addresses";
+import AccountAndInformation from "./AccountAndInformation";
+
+// Profile Details content
 const MyProfileContent = () => (
   <div className="bg-white p-6 rounded-2xl shadow-sm">
-    <h3 className="text-xl font-medium mb-4 italic">Profile Details</h3>
-    <div className="flex items-center space-x-4 mb-6">
-      <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-20 h-20 text-gray-500">
-          <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.85-1.76a.75.75 0 01-.437-.695z" clipRule="evenodd" />
+    <h3 className="text-lg sm:text-xl font-medium mb-4 italic">Profile Details</h3>
+    <div className="flex flex-col sm:flex-row items-center sm:items-start space-x-0 sm:space-x-4 mb-6">
+      <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          className="w-16 h-16 sm:w-20 sm:h-20 text-gray-500"
+        >
+          <path
+            fillRule="evenodd"
+            d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.85-1.76a.75.75 0 01-.437-.695z"
+            clipRule="evenodd"
+          />
         </svg>
       </div>
-      <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-sm">
+      <div className="grid grid-cols-2 gap-x-6 sm:gap-x-12 gap-y-4 text-sm mt-4 sm:mt-0 text-center sm:text-left">
         <div>
           <p className="text-gray-500">Name</p>
           <p className="font-medium">Vicky Swami</p>
@@ -36,143 +61,128 @@ const MyProfileContent = () => (
   </div>
 );
 
-// Component for the My Orders content
-const MyOrdersContent = () => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm">
-    <h3 className="text-xl font-medium mb-4 italic">My Orders</h3>
-    <p className="text-gray-500 mb-2">You have 2 recent orders.</p>
-    <div className="border rounded-lg p-4 mb-4">
-      <p className="font-semibold text-lg">Order #PANTS-202345</p>
-      <p className="text-sm text-gray-600">Items: 1 T-shirt, 1 pair of jeans</p>
-      <p className="text-sm text-gray-600">Status: Shipped</p>
-      <p className="text-sm text-gray-600">Date: Sept 1, 2025</p>
-    </div>
-    <div className="border rounded-lg p-4 mb-4">
-      <p className="font-semibold text-lg">Order #PANTS-987654</p>
-      <p className="text-sm text-gray-600">Items: 2 hoodies</p>
-      <p className="text-sm text-gray-600">Status: Delivered</p>
-      <p className="text-sm text-gray-600">Date: Aug 25, 2025</p>
-    </div>
-  </div>
-);
-
-// Component for the Wishlist content
-const WishlistContent = () => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm">
-    <h3 className="text-xl font-medium mb-4 italic">My Wishlist</h3>
-    <p className="text-gray-500 mb-2">You have 3 items in your wishlist.</p>
-    <div className="flex items-center justify-between p-4 mb-2 border rounded-lg">
-      <p className="font-medium">Blue Cotton T-shirt</p>
-      <button className="text-orange-500 hover:underline text-sm">Add to Cart</button>
-    </div>
-    <div className="flex items-center justify-between p-4 mb-2 border rounded-lg">
-      <p className="font-medium">High-Waisted Jeans</p>
-      <button className="text-orange-500 hover:underline text-sm">Add to Cart</button>
-    </div>
-    <div className="flex items-center justify-between p-4 mb-2 border rounded-lg">
-      <p className="font-medium">Leather Jacket</p>
-      <button className="text-orange-500 hover:underline text-sm">Add to Cart</button>
-    </div>
-  </div>
-);
-
-// Component for the Addresses content
-const AddressesContent = () => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm">
-    <h3 className="text-xl font-medium mb-4 italic">My Addresses</h3>
-    <p className="text-gray-500 mb-2">Your saved addresses:</p>
-    <div className="border rounded-lg p-4 mb-4">
-      <p className="font-semibold">Home Address</p>
-      <p className="text-sm text-gray-600">1, Kirodi Kund, Kirodi, Nawalgarh 333307</p>
-    </div>
-    <div className="border rounded-lg p-4 mb-4">
-      <p className="font-semibold">Work Address</p>
-      <p className="text-sm text-gray-600">1, Kirodi Kund, Kirodi, Nawalgarh 333307</p>
-    </div>
-  </div>
-);
-
-// Component for Customer Care content
+// Customer Care content
 const CustomerCareContent = () => (
-    <div className="bg-white p-6 rounded-2xl shadow-sm">
-      <h3 className="text-xl font-medium mb-4 italic">Customer Care</h3>
-      <p className="text-gray-500 mb-2">How can we help you today? Please find our contact details below:</p>
-      <div className="border rounded-lg p-4 mb-4">
-        <p className="font-semibold">Email Us:</p>
-        <p className="text-sm text-gray-600">support@aaryanprints.com</p>
-      </div>
-      <div className="border rounded-lg p-4 mb-4">
-        <p className="font-semibold">Call Us:</p>
-        <p className="text-sm text-gray-600">+91-9876543210</p>
-      </div>
+  <div className="bg-white p-6 rounded-2xl shadow-sm">
+    <h3 className="text-lg sm:text-xl font-medium mb-4 italic">Customer Care</h3>
+    <p className="text-gray-500 mb-2">
+      How can we help you today? Please find our contact details below:
+    </p>
+    <div className="border rounded-lg p-4 mb-4">
+      <p className="font-semibold">Email Us:</p>
+      <p className="text-sm text-gray-600">support@aaryanprints.com</p>
     </div>
+    <div className="border rounded-lg p-4 mb-4">
+      <p className="font-semibold">Call Us:</p>
+      <p className="text-sm text-gray-600">+91-9876543210</p>
+    </div>
+  </div>
 );
 
-// Main Profile component
 const Profile = () => {
-  const [activeLink, setActiveLink] = useState('My Profile');
+  const [activeLink, setActiveLink] = useState("My Profile");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const contentMap = {
-    'My Profile': <MyProfileContent />,
-    'My Orders': <MyOrdersContent />,
-    'Wishlist': <WishlistContent />,
-    'Addresses': <AddressesContent />,
-    'Customer Care': <CustomerCareContent />,
+    "My Profile": <MyProfileContent />,
+    "My Orders": <MyOrders />,
+    Wishlist: <Wishlist />,
+    Addresses: <Addresses />,
+    "Account & Information": <AccountAndInformation />,
+    "Customer Care": <CustomerCareContent />,
   };
 
   const navItems = [
-    { name: 'My Orders', icon: <BiListOl className="text-lg" /> },
-    { name: 'Wishlist', icon: <BiHeart className="text-lg" /> },
-    { name: 'Account & Information', icon: <BiInfoCircle className="text-lg" /> },
-    { name: 'Addresses', icon: <BiMap className="text-lg" /> },
-    { name: 'Saved Cards', icon: <BiCreditCard className="text-lg" /> },
-    { name: 'Customer Care', icon: <BiSupport className="text-lg" /> },
+    { name: "My Orders", icon: <BiListOl className="text-lg" /> },
+    { name: "Wishlist", icon: <BiHeart className="text-lg" /> },
+    { name: "Account & Information", icon: <BiInfoCircle className="text-lg" /> },
+    { name: "Addresses", icon: <BiMap className="text-lg" /> },
+    { name: "Saved Cards", icon: <BiCreditCard className="text-lg" /> },
+    { name: "Customer Care", icon: <BiSupport className="text-lg" /> },
   ];
 
   const handleLogout = () => {
-    // Placeholder for actual logout logic
-    alert('Logging out...');
+    alert("Logging out...");
   };
 
   return (
-    <div className="bg-gray-100 mt-24 mb-4 min-h-screen p-8 font-sans">
+    <div className="bg-gray-100 mt-24 mb-4 min-h-screen p-4 sm:p-6 md:p-8 font-sans">
       <div className="max-w-7xl mx-auto bg-white rounded-3xl shadow-lg overflow-hidden">
-        {/* Top Header */}
-        <div className="flex items-center p-6 border-b border-gray-200">
-          {/* Avatar with Camera Icon */}
-          <div className="relative">
-            <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-20 h-20 text-gray-500">
-                <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.85-1.76a.75.75 0 01-.437-.695z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="absolute bottom-1 right-1 bg-white p-1 rounded-full shadow cursor-pointer">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-gray-500">
-                <path d="M14.5 14.5a3 3 0 10-3-3 3 3 0 003 3zM18 10a8 8 0 11-16 0 8 8 0 0116 0zM12 2a10 10 0 100 20 10 10 0 000-20z" />
-              </svg>
-            </div>
+        {/* Header */}
+        <div className="flex items-center p-4 sm:p-6 border-b border-gray-200">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-200 rounded-full flex items-center justify-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="w-16 h-16 sm:w-20 sm:h-20 text-gray-500"
+            >
+              <path
+                fillRule="evenodd"
+                d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.85-1.76a.75.75 0 01-.437-.695z"
+                clipRule="evenodd"
+              />
+            </svg>
           </div>
-          <h1 className="text-2xl font-semibold ml-6 text-gray-800">Welcome, Vicky!</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold ml-4 text-gray-800">
+            Welcome, Vicky!
+          </h1>
+
+          {/* Hamburger */}
+          <button
+            className="ml-auto sm:hidden text-2xl text-gray-600"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <BiMenu />
+          </button>
         </div>
-        {/* Main Content Area */}
-        <div className="flex">
-          {/* Sidebar */}
-          <nav className="w-64 p-6 bg-white border-r border-gray-200">
-            <ul className="space-y-2">
+
+        {/* Overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-40 z-40 sm:hidden"
+            onClick={() => setSidebarOpen(false)}
+          ></div>
+        )}
+
+        <div className="flex flex-col md:flex-row relative">
+          {/* Sidebar (drawer on mobile) */}
+          <nav
+            className={`fixed sm:static top-0 left-0 h-full w-64 bg-white z-50 sm:z-auto transform transition-transform duration-300 sm:translate-x-0 ${
+              sidebarOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
+          >
+            <div className="flex justify-between items-center p-4 border-b sm:hidden">
+              <h2 className="font-semibold text-gray-700">Menu</h2>
+              <button onClick={() => setSidebarOpen(false)} className="text-2xl">
+                <BiX />
+              </button>
+            </div>
+            <ul className="p-4 space-y-2">
               <li
-                onClick={() => setActiveLink('My Profile')}
-                className={`py-3 px-4 rounded-lg cursor-pointer transition-all duration-200 ${
-                  activeLink === 'My Profile' ? 'bg-orange-50 text-orange-500 font-medium' : 'text-gray-700 hover:bg-gray-100'
+                onClick={() => {
+                  setActiveLink("My Profile");
+                  setSidebarOpen(false);
+                }}
+                className={`py-3 px-4 rounded-lg cursor-pointer ${
+                  activeLink === "My Profile"
+                    ? "bg-orange-50 text-orange-500 font-medium"
+                    : "text-gray-700 hover:bg-gray-100"
                 }`}
               >
                 My Profile
               </li>
-              {navItems.map((item, index) => (
+              {navItems.map((item, i) => (
                 <li
-                  key={index}
-                  onClick={() => setActiveLink(item.name)}
-                  className={`flex items-center py-3 px-4 rounded-lg cursor-pointer transition-all duration-200 ${
-                    activeLink === item.name ? 'bg-orange-50 text-orange-500 font-medium' : 'text-gray-700 hover:bg-gray-100'
+                  key={i}
+                  onClick={() => {
+                    setActiveLink(item.name);
+                    setSidebarOpen(false);
+                  }}
+                  className={`flex items-center py-3 px-4 rounded-lg cursor-pointer ${
+                    activeLink === item.name
+                      ? "bg-orange-50 text-orange-500 font-medium"
+                      : "text-gray-700 hover:bg-gray-100"
                   }`}
                 >
                   <span className="mr-3">{item.icon}</span>
@@ -181,16 +191,18 @@ const Profile = () => {
               ))}
               <li
                 onClick={handleLogout}
-                className="flex items-center py-3 px-4 rounded-lg cursor-pointer transition-all duration-200 text-gray-700 hover:bg-gray-100"
+                className="flex items-center py-3 px-4 rounded-lg cursor-pointer text-gray-700 hover:bg-gray-100"
               >
-                <span className="mr-3"><BiLogOut className="text-lg" /></span>
+                <span className="mr-3">
+                  <BiLogOut className="text-lg" />
+                </span>
                 Logout
               </li>
             </ul>
           </nav>
 
           {/* Main Panel */}
-          <main className="flex-1 p-8 bg-gray-50">
+          <main className="flex-1 p-4 sm:p-6 md:p-8 bg-gray-50 z-0">
             {contentMap[activeLink] || <div>Page not found.</div>}
           </main>
         </div>

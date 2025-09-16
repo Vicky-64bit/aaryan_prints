@@ -4,18 +4,6 @@ import products from '../components/common/products';
 import { Link } from 'react-router-dom';
 
 
-// Placeholder data for products
-// const products = [
-//   { id: 1, name: 'Black Formal Shoes', category: 'Formal Shoes', price: 1299, gender: 'Men', image: 'https://placehold.co/300x400/E8DED1/000000?text=Shoe+1', specialPrice: null },
-//   { id: 2, name: 'Black Ballerinas', category: 'Ballerinas', price: 999, gender: 'Women', image: 'https://placehold.co/300x400/E8DED1/000000?text=Shoe+2', specialPrice: 'Online Special Price' },
-//   { id: 3, name: 'Black Casual Shoes', category: 'Casual Shoes', price: 1499, gender: 'Men', image: 'https://placehold.co/300x400/E8DED1/000000?text=Shoe+3', specialPrice: null },
-//   { id: 4, name: 'Brown Loafers', category: 'Casual Shoes', price: 1199, gender: 'Men', image: 'https://placehold.co/300x400/E8DED1/000000?text=Shoe+4', specialPrice: null },
-//   { id: 5, name: 'White Sneakers', category: 'Casual Shoes', price: 1799, gender: 'Women', image: 'https://placehold.co/300x400/E8DED1/000000?text=Shoe+5', specialPrice: null },
-//   { id: 6, name: 'Red Heels', category: 'Heels', price: 1599, gender: 'Women', image: 'https://placehold.co/300x400/E8DED1/000000?text=Shoe+6', specialPrice: null },
-//   { id: 7, name: 'Blue Handbag', category: 'Handbags', price: 899, gender: 'Women', image: 'https://placehold.co/300x400/E8DED1/000000?text=Bag+1', specialPrice: null },
-//   { id: 8, name: 'Brown Flip Flops', category: 'Flip Flops', price: 499, gender: 'Men', image: 'https://placehold.co/300x400/E8DED1/000000?text=Sandal+1', specialPrice: null },
-// ];
-
 
 
 const CollectionPage = () => {

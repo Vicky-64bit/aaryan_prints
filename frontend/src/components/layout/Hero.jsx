@@ -3,9 +3,9 @@ import heroImg from "../../assets/rabbit-hero.webp";
 
 // Mock banner images for the hero section
 const bannerImages = [
-  'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Y2xvdGhlc3xlbnwwfHwwfHx8MA%3D%3D',
-  'https://placehold.co/1200x600/E3F2FD/003366?text=Hero+Banner+2',
-  'https://placehold.co/1200x600/B97E5B/FFFFFF?text=Hero+Banner+3',
+  'https://images.unsplash.com/photo-1745313452052-0e4e341f326c?q=80&w=1520&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  'https://t4.ftcdn.net/jpg/06/53/63/33/360_F_653633323_Z1Pt1An3VP7eRzOCOlULIonWFRpbaC75.webp',
+  'https://t4.ftcdn.net/jpg/09/58/94/69/240_F_958946972_Qw2iBqeFNvgo4nZfboqhh79lA7YpgLTn.jpg',
 ];
 
 const Hero = () => {
@@ -28,7 +28,7 @@ const Hero = () => {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
+    <div className="relative mt-20 w-full h-screen overflow-hidden ">
       {/* Background Image */}
       <img
         src={bannerImages[currentImageIndex]}

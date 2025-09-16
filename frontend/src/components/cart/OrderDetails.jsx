@@ -17,7 +17,7 @@ const OrderDetails = ({ order, onBack }) => {
   };
 
   return (
-    <div className="mt-28 mb-4 p-4 sm:p-6 md:p-8">
+    <div className=" mb-4 p-4 sm:p-6 md:p-8">
       <div className="flex items-center space-x-2 mb-6">
         <button onClick={onBack} className="text-gray-500 hover:text-gray-800 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
