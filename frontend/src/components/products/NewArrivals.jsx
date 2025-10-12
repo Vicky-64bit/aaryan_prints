@@ -1,11 +1,27 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
-const NewArrivals = ({ products }) => {
+const NewArrivals = () => {
   
 
   const [startIndex, setStartIndex] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(4);
+
+  const [newArrivals, setNewArrivals] = useState([]);
+  useEffect(()=>{
+    const fetchNewArrivals = async () => {
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products/new-arrivals`);
+      setNewArrivals(response.data);
+    } catch (error) {
+      console.error(error);      
+    }
+  };
+  fetchNewArrivals();
+  }, []);
+  
+
 
   // 🔹 Responsive items per page
   useEffect(() => {
@@ -24,9 +40,9 @@ const NewArrivals = ({ products }) => {
     updateItemsPerPage();
     window.addEventListener("resize", updateItemsPerPage);
     return () => window.removeEventListener("resize", updateItemsPerPage);
-  }, []);
+  }, [newArrivals]);
 
-  const totalItems = products.length;
+  const totalItems = newArrivals.length;
 
   const handleNext = () => {
     if (startIndex + itemsPerPage < totalItems) {
@@ -40,7 +56,7 @@ const NewArrivals = ({ products }) => {
     }
   };
 
-  const visibleProducts = products.slice(startIndex, startIndex + itemsPerPage);
+  const visibleProducts = newArrivals.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <section className="my-4 lg:px-0">
@@ -87,7 +103,7 @@ const NewArrivals = ({ products }) => {
                 <div className="flex space-x-2.5 overflow-x-hidden py-2 pr-6">
                   {visibleProducts.map((product) => (
                     <Link
-                    to={`/product/${product.id}`}
+                    to={`/product/${product._id}`}
                       key={product.id}
                       className="group flex-shrink-0 w-full sm:w-1/2 md:w-1/3 lg:w-1/4 bg-white rounded-xl shadow-lg hover:shadow-xl transition-transform duration-300 transform hover:scale-105"
                     > 

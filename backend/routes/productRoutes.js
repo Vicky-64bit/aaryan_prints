@@ -220,6 +220,9 @@ router.get("/", async(req,res)=>{
                 case "popularity":
                     sort = {rating: -1};
                     break;
+                case "newest":
+                    sort = {createdAt: -1};
+                    break;
                 default:
                     break;            
             }

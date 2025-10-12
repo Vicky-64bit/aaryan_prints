@@ -2,7 +2,13 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 
-const ProductGrid = ({ products}) => {
+const ProductGrid = ({ products, loading, error}) => {
+  if(loading) {
+    return <p>Loading...</p>
+  }
+  if(error) {
+    return <p>Error: {error}</p>
+  }
   const [startIndex, setStartIndex] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(4);
 
@@ -74,7 +80,7 @@ const ProductGrid = ({ products}) => {
         <div className="mx-auto flex justify-center space-x-2.5 overflow-hidden p-4">
           {visibleProducts.map((product) => (
              <Link
-                    to={`/product/${product.id}`}
+                    to={`/product/${product._id}`}
               key={product.id}
               className="group flex-shrink-0 
                          w-full sm:w-1/2 md:w-1/3 lg:w-1/4 

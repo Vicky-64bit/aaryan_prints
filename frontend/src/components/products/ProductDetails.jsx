@@ -3,86 +3,42 @@ import { toast } from "sonner";
 import { useParams, useNavigate } from "react-router-dom";
 import products from "../common/products";
 import ProductGrid from "./ProductGrid";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchProductDetails, fetchSimilarProducts } from "../../redux/slice/productSlice";
+import { addToCart } from "../../redux/slice/cartSlice";
 
-const similarProducts = [
-  {
-    id: 1,
-    image: 'https://placehold.co/400x500/E5E7EB/1F2937?text=Product+1',
-    offer: 'Flat 50%',
-    title: 'FOREVER GLAM',
-    description: 'Cream Tone-tone Slingback Pointed Heel Sandals',
-    price: '₹ 1899',
-  },
-  {
-    id: 2,
-    image: 'https://placehold.co/400x500/E5E7EB/1F2937?text=Product+2',
-    offer: 'Flat 50%',
-    title: 'AJILE',
-    description: 'White Striped Johnny Polo Cropped Rugby Top',
-    price: '₹ 1199',
-  },
-  {
-    id: 3,
-    image: 'https://placehold.co/400x500/E5E7EB/1F2937?text=Product+3',
-    offer: 'Flat 50%',
-    title: 'RANGMANCH',
-    description: 'Purple Foil Print A-line Peplum Kurta',
-    price: '₹ 1299',
-  },
-  {
-    id: 4,
-    image: 'https://placehold.co/400x500/E5E7EB/1F2937?text=Product+4',
-    offer: 'Flat 50%',
-    title: 'RANGMANCH',
-    description: 'Beige Watercolour Floral Print A-line Kurta',
-    price: '₹ 1299',
-  },
-  {
-    id: 5,
-    image: 'https://placehold.co/400x500/E5E7EB/1F2937?text=Product+5',
-    offer: 'Flat 50%',
-    title: 'MARIGOLD LANE',
-    description: 'Yellow Wall Print Layered Collar A-line Kurta',
-    price: '₹ 1699',
-  },
-  {
-    id: 6,
-    image: 'https://placehold.co/400x500/E5E7EB/1F2937?text=Product+6',
-    offer: 'Flat 50%',
-    title: 'RANGMANCH',
-    description: 'Pink Floral Print Flared Dress',
-    price: '₹ 1499',
-  },
-  {
-    id: 7,
-    image: 'https://placehold.co/400x500/E5E7EB/1F2937?text=Product+7',
-    offer: 'Flat 50%',
-    title: 'FOREVER GLAM',
-    description: 'Black Suede Pointed Toe Heels',
-    price: '₹ 1999',
-  },
-];
 
-const ProductDetails = () => {
+const ProductDetails = ({productId}) => {
     const { id } = useParams();
-  const navigate = useNavigate();
-  const selectedProduct = products.find((p) => p.id === parseInt(id));
 
-if (!selectedProduct) {
-  return (
-    <div className="text-center text-red-500 mt-20 text-xl">
-      ⚠️ Product not found
-    </div>
-  );
-}
+    console.log("useParams id:", id);
+console.log("prop productId:", productId);
+    const dispatch = useDispatch();
+    const {selectedProduct, loading, error, similarProducts} = useSelector((state)=> state.products);
+    const {user, guestId} = useSelector((state)=> state.auth);
+
+
+  const navigate = useNavigate();
+  // const selectedProduct = products.find((p) => p.id === parseInt(id));
+
+
 
   const [mainImage, setMainImage] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [isButtonDisabled, setIsButtonDiasbled] = useState(false);
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  const productFetchId = productId || id;
+
+  useEffect(() => {
+    if(productFetchId) {
+      dispatch(fetchProductDetails(productFetchId));
+      dispatch(fetchSimilarProducts({ id: productFetchId}));
+    }
+  }, [dispatch, productFetchId]);
 
 
   useEffect(() => {
@@ -103,13 +59,38 @@ if (!selectedProduct) {
         });
         return;
     }
-    setIsButtonDiasbled("true");
+    setIsButtonDisabled("true");
 
-    setTimeout(() => {
-        toast.success("Product added to cart!", {duration:1000,});
-        setIsButtonDiasbled(false);
-    }, 500);
+    dispatch(
+      addToCart({
+        productId : productFetchId,
+        quantity,
+        size: selectedSize,
+        color: selectedColor,
+        guestId,
+        userId: user?._id,
+      })
+    )
+    .then(()=>{
+      toast.success("Product added to cart",{
+        duration: 1000,
+      });
+    })
+    .finally(() => {
+      setIsButtonDisabled(false);
+    })
   };
+
+  if (loading) return <p className="text-center mt-20">Loading...</p>;
+if (error) return <p className="text-center text-red-500 mt-20">Error: {error}</p>;
+if (!selectedProduct) {
+  return (
+    <div className="text-center text-red-500 mt-20 text-xl">
+      ⚠️ Product not found
+    </div>
+  );
+}
+
   
   const handleAddToWishlist = () => {
     toast.success("Product added to wishlist!", {duration: 1000});
@@ -125,8 +106,12 @@ if (!selectedProduct) {
   const handleGoBack = () => {
     navigate(-1);
   };
+  console.log("selectedProduct", selectedProduct);
 
   return (
+    <div>
+      
+    {selectedProduct &&(
     <div className="max-w-6xl mt-28 mx-auto bg-white p-8 rounded-lg">
       <button
         onClick={handleGoBack}
@@ -294,22 +279,24 @@ if (!selectedProduct) {
         <h2 className="text-3xl text-center font-bold mb-6">
             You May Also Like
         </h2>
-        <ProductGrid products={similarProducts} />
+        <ProductGrid products={similarProducts} loading={loading} error={error} />
       </div>
 
       <div className="mt-16">
         <h2 className="text-3xl text-center font-bold mb-6">
             More Like This
         </h2>
-        <ProductGrid products={products} />
+        <ProductGrid products={products} loading={loading} error={error} />
       </div>
 
       <div className="mt-16">
         <h2 className="text-3xl text-center font-bold mb-6">
             Frequently Bought Together
         </h2>
-        <ProductGrid products={products} />
+        <ProductGrid products={products} loading={loading} error={error} />
       </div>
+    </div>
+    )}
     </div>
   );
 };

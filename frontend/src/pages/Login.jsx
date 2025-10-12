@@ -1,91 +1,103 @@
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { loginUser } from "../redux/slice/authSlice";
 
 const Login = () => {
-  const [mobileNumber, setMobileNumber] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handleMobileNumberChange = (event) => {
-    setMobileNumber(event.target.value);
-  };
+  const { loading } = useSelector((state) => state.auth);
 
-  const handleGetOTP = () => {
-    // Implement OTP logic here
-    console.log("Fetching OTP for:", mobileNumber);
-    
-     navigate("/register");
-    // You would typically call an API here to send an OTP
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    if (!mobile || !password) {
+      alert("Please enter both mobile number and password");
+      return;
+    }
+
+    try {
+      await dispatch(loginUser({ mobile, password })).unwrap();
+      navigate("/profile");
+    } catch (error) {
+      alert("Login failed. Please check your credentials.");
+    }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen  p-4">
-      <style jsx>{`
-        .background {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background-image:url('https://pagedone.io/asset/uploads/1702362010.png');
-          background-repeat: no-repeat;
-          background-size: cover;
-          opacity: 0.6;
-        }
-
-        .login-card {
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1),
-            0 1px 3px rgba(0, 0, 0, 0.08);
-        }
-      `}</style>
-
-      {/* Background Image/Pattern */}
-      <div className="background"></div>
+    <div className="flex items-center justify-center min-h-screen p-4 relative">
+      {/* Background */}
+      <div
+        className="absolute top-0 left-0 w-full h-full bg-cover bg-no-repeat opacity-60"
+        style={{ backgroundImage: 'url("https://pagedone.io/asset/uploads/1702362010.png")' }}
+      ></div>
 
       {/* Login Card */}
-      <div className="relative w-full max-w-sm mx-auto p-8 bg-white rounded-2xl login-card z-10">
+      <div className="relative w-full max-w-sm mx-auto p-8 bg-white rounded-2xl shadow-lg z-10">
         {/* Discount Box */}
         <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 w-4/5 bg-orange-500 text-white text-xs font-semibold rounded-lg p-2 text-center shadow-lg">
           <p className="text-sm">Enjoy an Extra 10% Off on Your 1st Order!</p>
-          <p className="mt-1">
-            Web: Minimum ₹1599 purchase (Code: PTWELCOME10)
-          </p>
+          <p className="mt-1">Web: Minimum ₹1599 purchase (Code: PTWELCOME10)</p>
           <p>App: No minimum purchase (Code: APPONLY)</p>
         </div>
 
-        {/* Login/Register Header */}
+        {/* Header */}
         <div className="text-center mt-12 mb-8">
-          <h2 className="text-xl font-light italic text-gray-700">
-            Login/Register
-          </h2>
+          <h2 className="text-xl font-light italic text-gray-700">Login/Register</h2>
         </div>
 
         {/* Form */}
-        <form onSubmit={(e) => e.preventDefault()}>
-          <label
-            htmlFor="mobile-number"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Enter Mobile Number<span className="text-red-500">*</span>
+        <form onSubmit={handleLogin}>
+          <label htmlFor="mobile-number" className="block text-sm font-medium text-gray-700 mb-1">
+            Mobile Number <span className="text-red-500">*</span>
           </label>
-          <div className="mt-1">
+          <input
+            type="tel"
+            id="mobile-number"
+            placeholder="Mobile Number"
+            value={mobile}
+            onChange={(e) => setMobile(e.target.value)}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+            maxLength={10}
+            pattern="[0-9]{10}"
+            required
+          />
+
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1 mt-4">
+            Password <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
             <input
-              type="tel"
-              id="mobile-number"
-              name="mobile-number"
-              placeholder="Mobile Number"
-              value={mobileNumber}
-              onChange={handleMobileNumberChange}
+              type={showPassword ? "text" : "password"}
+              id="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+              required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm"
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
           </div>
 
           <button
             type="submit"
-            onClick={handleGetOTP}
-            className="w-full mt-6 flex justify-center py-2 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+            disabled={loading}
+            className={`w-full mt-6 flex justify-center py-2 px-4 border border-transparent rounded-full shadow-sm text-sm font-medium text-white ${
+              loading ? "bg-gray-400 cursor-not-allowed" : "bg-orange-600 hover:bg-orange-700"
+            } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500`}
           >
-            GET OTP
+            {loading ? "Logging in..." : "LOGIN"}
           </button>
         </form>
       </div>
