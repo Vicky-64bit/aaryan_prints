@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   BiUser,
   BiHeart,
@@ -17,6 +17,10 @@ import Wishlist from "../components/cart/wishlist";
 import Addresses from "./Addresses";
 import AccountAndInformation from "./AccountAndInformation";
 import MyProfileContent from "./MyProfileContent";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { clearCart } from "../redux/slice/cartSlice";
+import { logout } from "../redux/slice/authSlice";
 
 // Customer Care content
 const CustomerCareContent = () => (
@@ -37,6 +41,27 @@ const CustomerCareContent = () => (
 );
 
 const Profile = () => {
+
+  const {user} = useSelector((state)=> state.auth);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  useEffect(()=>{
+    if(!user) {
+      navigate("/login");
+    }
+  }, [user, navigate]);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    dispatch(clearCart());
+    navigate("/login");
+
+  };
+
+
+
+
   const [activeLink, setActiveLink] = useState("My Profile");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -58,9 +83,7 @@ const Profile = () => {
     { name: "Customer Care", icon: <BiSupport className="text-lg" /> },
   ];
 
-  const handleLogout = () => {
-    alert("Logging out...");
-  };
+  
 
   return (
     <div className="bg-gray-100 mt-24 mb-4 min-h-screen p-4 sm:p-6 md:p-8 font-sans">
@@ -82,7 +105,7 @@ const Profile = () => {
             </svg>
           </div>
           <h1 className="text-xl sm:text-2xl font-semibold ml-4 text-gray-800">
-            Welcome, Vicky!
+            Welcome, {user?.firstName}!
           </h1>
 
           {/* Hamburger */}

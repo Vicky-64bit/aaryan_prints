@@ -13,7 +13,7 @@ const MyProfileContent = () => {
     );
   }
 
-  const { firstName, gender, email, mobile } = user;
+
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm">
@@ -40,19 +40,19 @@ const MyProfileContent = () => {
         <div className="grid grid-cols-2 gap-x-6 sm:gap-x-12 gap-y-4 text-sm mt-4 sm:mt-0 text-center sm:text-left">
           <div>
             <p className="text-gray-500">Name</p>
-            <p className="font-medium">{firstName || "N/A"}</p>
+            <p className="font-medium">{user?.firstName || "N/A"}</p>
           </div>
           <div>
             <p className="text-gray-500">Gender</p>
-            <p className="font-medium">{gender || "N/A"}</p>
+            <p className="font-medium">{user?.gender || "N/A"}</p>
           </div>
           <div>
             <p className="text-gray-500">Email Address</p>
-            <p className="font-medium">{email || "N/A"}</p>
+            <p className="font-medium">{user?.email || "N/A"}</p>
           </div>
           <div>
             <p className="text-gray-500">Mobile Number</p>
-            <p className="font-medium">{mobile || "N/A"}</p>
+            <p className="font-medium">{user?.mobile || "N/A"}</p>
           </div>
         </div>
       </div>

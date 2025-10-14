@@ -14,8 +14,15 @@ const productAdminRoutes = require("./routes/productAdminRoutes");
 const adminOrderRoutes = require("./routes/adminOrderRoutes");
 
 const app = express();
+// Allow requests from your frontend
+app.use(
+  cors({
+    origin: "http://localhost:5173", // your React dev server
+    credentials: true,               // allow headers/cookies
+  })
+);
 app.use(express.json());
-app.use(cors());
+
 
 dotenv.config();
 

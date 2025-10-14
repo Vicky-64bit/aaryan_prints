@@ -7,7 +7,7 @@ export const createCheckout = createAsyncThunk("checkout/createCheckout", async 
         const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/checkout`, checkoutData,
             {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+                    Authorization: `Bearer ${localStorage.getItem("usertoken")}`,
                 },
             }
         );

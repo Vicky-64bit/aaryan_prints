@@ -45,7 +45,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/orderconfirm" element={<OrderConfirmationPage />} />
+          <Route path="/order-confirmation/:id" element={<OrderConfirmationPage />} />
 
           <Route>
             {/* Admin Layout */}

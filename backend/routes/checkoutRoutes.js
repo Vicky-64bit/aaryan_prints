@@ -6,36 +6,56 @@ const Product = require("../models/Product");
 const { protect, admin } = require("../middlewares/authMiddelware");
 
 const router = express.Router();
+const Razorpay = require("razorpay");
+
+// Initialize Razorpay instance
+const razorpay = new Razorpay({
+  // key_id: process.env.RAZORPAY_KEY_ID,
+  // key_secret: process.env.RAZORPAY_KEY_SECRET,
+  key_id: "rzp_test_RTDuJN0392Bk1K",
+  key_secret: "oQlv903wXQJ3oMwgGr0QiGVy"
+});
 
 // @route POST /api/checkout
 // @desc Create a new checkout sessions
 // @access Private
 router.post("/", protect, async (req, res) => {
-  const { checkoutItems, shippingAddress, paymentMethod, totalPrice } =
-    req.body;
+  const { checkoutItems, shippingAddress, paymentMethod, totalPrice } = req.body;
 
   if (!checkoutItems || checkoutItems.length === 0) {
-    return res.status(400).json({ message: "no items in checkout" });
+    return res.status(400).json({ message: "No items in checkout" });
   }
 
   try {
-    // Create a new checkout session
     const newCheckout = await Checkout.create({
       user: req.user._id,
-      checkoutItems: checkoutItems,
+      checkoutItems,
       shippingAddress,
       paymentMethod,
       totalPrice,
       paymentStatus: "Pending",
       isPaid: false,
     });
+
+    let razorpayOrder = null;
+
+    if (paymentMethod === "Razorpay") {
+      razorpayOrder = await razorpay.orders.create({
+        amount: totalPrice * 100, // amount in paise
+        currency: "INR",
+        receipt: newCheckout._id.toString(),
+        payment_capture: 1,
+      });
+    }
+
     console.log(`Checkout created for user: ${req.user._id}`);
-    res.status(201).json(newCheckout);
+    res.status(201).json({ checkout: newCheckout, razorpayOrder });
   } catch (error) {
     console.error("Error creating checkout session", error);
     res.status(500).json({ message: "Server Error" });
   }
 });
+
 
 // @route PUT /api/checkout/:id/pay
 // @desc Update checkout to mark as paid after successfull payment

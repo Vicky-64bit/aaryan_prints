@@ -1,59 +1,37 @@
 import React, { useState } from "react";
 import { RiDeleteBin3Line } from "react-icons/ri"; 
+import { useDispatch } from "react-redux";
+import { updateCartItemQuantity, removeFromCart } from "../../redux/slice/cartSlice";
 
-const CartContent = ({cartProducts, setCartProducts}) => {
-  // State for cart products
-  // const [cartProducts, setCartProducts] = useState([
-  //   {
-  //     productId: 1,
-  //     name: "Classic Orange Hoodie",
-  //     size: "M",
-  //     color: "Heather Gray",
-  //     quantity: 2,
-  //     price: 49.99,
-  //     image: "https://placehold.co/80x96/f3f4f6/57534e?text=HOODIE",
-  //   },
-  //   {
-  //     productId: 2,
-  //     name: "High-Rise Slim Jeans",
-  //     size: "L",
-  //     color: "Deep Blue",
-  //     quantity: 1,
-  //     price: 79.5,
-  //     image: "https://placehold.co/80x96/f3f4f6/57534e?text=JEANS",
-  //   },
-  //   {
-  //     productId: 3,
-  //     name: "Essential White Tee",
-  //     size: "S",
-  //     color: "White",
-  //     quantity: 3,
-  //     price: 19.99,
-  //     image: "https://placehold.co/80x96/f3f4f6/57534e?text=TEE",
-  //   },
-  // ]);
 
-  const increaseQty = (id) => {
-  setCartProducts(prev => 
-    prev.map(p => p.productId === id ? {...p, quantity: p.quantity + 1} : p)
-  );
-};
+const CartContent = ({cart, userId, guestId}) => {
+ 
+  const dispatch = useDispatch();
+  const handleAddToCart = (productId, delta, quantity, size, color)=>{
+    const newQuantity = quantity + delta;
+    if(newQuantity >= 1) {
+      dispatch(
+        updateCartItemQuantity({
+          productId,
+          quantity: newQuantity,
+          guestId,
+          userId,
+          size,
+          color,
+        })
+      )
+    }
+  };
 
-const decreaseQty = (id) => {
-  setCartProducts(prev => 
-    prev.map(p => p.productId === id ? {...p, quantity: Math.max(1, p.quantity - 1)} : p)
-  );
-};
-
-const removeItem = (id) => {
-  setCartProducts(prev => prev.filter(p => p.productId !== id));
-};
+  const handleRemoveFromCart = (productId, size, color) => {
+    dispatch(removeFromCart({productId, guestId, userId, size, color}))
+  }
 
 
   return (
     <div className="space-y-4">
-      {cartProducts.length > 0 ? (
-        cartProducts.map((product) => (
+      {cart.products.length > 0 ? (
+        cart.products.map((product) => (
           <div
             key={product.productId}
             className="flex p-3 bg-white border border-gray-100 rounded-xl shadow-sm transition duration-150 hover:shadow-md"
@@ -81,7 +59,9 @@ const removeItem = (id) => {
                 <button
                   className="p-1 flex-shrink-0 text-gray-400 hover:text-red-600 transition duration-150"
                   aria-label={`Remove ${product.name} from cart`}
-                  onClick={() => removeItem(product.productId)}
+                  onClick={() => {
+                      handleRemoveFromCart(product.productId, product.size, product.color)
+                    }}
                 >
                   <RiDeleteBin3Line className="w-5 h-5" />
                 </button>
@@ -94,7 +74,15 @@ const removeItem = (id) => {
                   <button
                     className="w-7 h-7 flex items-center justify-center text-lg font-medium text-gray-600 hover:text-white hover:bg-orange-600 rounded-full transition duration-150"
                     aria-label={`Decrease quantity of ${product.name}`}
-                    onClick={() =>decreaseQty(product.productId)}
+                    onClick={() => {
+                      handleAddToCart(
+                        product.productId,
+                        -1,
+                        product.quantity,
+                        product.size,
+                        product.color
+                      )
+                    }}
                   >
                     -
                   </button>
@@ -104,7 +92,15 @@ const removeItem = (id) => {
                   <button
                     className="w-7 h-7 flex items-center justify-center text-lg font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-full transition duration-150 shadow-md"
                     aria-label={`Increase quantity of ${product.name}`}
-                    onClick={() => increaseQty(product.productId)}
+                    onClick={() => {
+                      handleAddToCart(
+                        product.productId,
+                        1,
+                        product.quantity,
+                        product.size,
+                        product.color
+                      )
+                    }}
                   >
                     +
                   </button>
@@ -116,7 +112,7 @@ const removeItem = (id) => {
                     ${(product.price * product.quantity).toFixed(2)}
                   </p>
                   <p className="text-xs text-gray-400 italic mt-1">
-                    (${product.price.toFixed(2)} ea.)
+                    ({Number(product.price).toFixed(2)})
                   </p>
                 </div>
               </div>

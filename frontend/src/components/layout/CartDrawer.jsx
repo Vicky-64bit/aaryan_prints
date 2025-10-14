@@ -6,43 +6,30 @@ import { IoClose, IoChevronForwardOutline } from "react-icons/io5";
 // as requested by the user. This component uses it directly.
 // const CartContent = ({ items }) => { ... };
 import CartContent from "../cart/CartContent";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const CartDrawer = ({ drawerOpen, toggleCartDrawer }) => {
-  const [cartProducts, setCartProducts] = React.useState([
-    {
-      productId: 1,
-      name: "Classic Orange Hoodie",
-      size: "M",
-      color: "Heather Gray",
-      quantity: 2,
-      price: 49.99,
-      image: "https://placehold.co/80x96/f3f4f6/57534e?text=HOODIE",
-    },
-    {
-      productId: 2,
-      name: "High-Rise Slim Jeans",
-      size: "L",
-      color: "Deep Blue",
-      quantity: 1,
-      price: 79.5,
-      image: "https://placehold.co/80x96/f3f4f6/57534e?text=JEANS",
-    },
-    {
-      productId: 3,
-      name: "Essential White Tee",
-      size: "S",
-      color: "White",
-      quantity: 3,
-      price: 19.99,
-      image: "https://placehold.co/80x96/f3f4f6/57534e?text=TEE",
-    },
-  ]);
+  const navigate = useNavigate();
+  const { user, guestId } = useSelector((state) => state.auth);
+  const { cart } = useSelector((state) => state.cart);
+  const userId = user ? user._id : null;
+
+  const handleCheckout = () => {
+    toggleCartDrawer();
+    if (!user) {
+      navigate("/login?redirect=checkout");
+    } else {
+      navigate("/checkout");
+    }
+  };
 
   // Mock value for Total/Subtotal since the CartContent component is external
-  const mockTotal = cartProducts.reduce(
+const mockTotal = cart?.products?.reduce(
   (sum, product) => sum + product.price * product.quantity,
   0
-);
+) || 0;
+
 
   // Backdrop for outside clicks and visual focus
   const backdropClasses = `fixed inset-0 transition-opacity duration-300 z-40 ${
@@ -91,10 +78,16 @@ const CartDrawer = ({ drawerOpen, toggleCartDrawer }) => {
         {/* Cart Content Area */}
         <div className="flex-grow p-6 overflow-y-auto bg-gray-50">
           {/* Placeholder for actual cart contents - assumes this is imported */}
-          <CartContent
-            cartProducts={cartProducts}
-            setCartProducts={setCartProducts}
-          />
+          {cart && cart?.products?.length > 0 ? (
+            <CartContent cart={cart} userId={userId} guestId={guestId} />
+          ) : (
+            <div className="text-center py-10 text-gray-500">
+              <p className="text-lg font-medium">Your cart is empty.</p>
+              <p className="text-sm mt-1">
+                Time to fill it up with some style!
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Checkout Button & Footer (Orange Theme) */}
@@ -102,20 +95,29 @@ const CartDrawer = ({ drawerOpen, toggleCartDrawer }) => {
           {/* Total price calculation */}
           <div className="flex justify-between text-md font-bold mb-4 text-gray-900">
             <span>Total</span>
-            <span className="text-orange-600">${mockTotal.toFixed(2)}</span>
+            {cart && cart?.products?.length > 0 ? (
+              <span className="text-orange-600">₹{mockTotal.toFixed(2)}</span>
+            ) : (
+              <span className="text-orange-600">₹ 0</span>
+            )}
           </div>
 
-          <button
-            className="w-full inline-flex items-center justify-center bg-orange-600 text-white py-4 rounded-xl font-bold text-md shadow-lg shadow-orange-300/50 hover:bg-orange-700 transition duration-300 transform hover:scale-[1.01]"
-            onClick={() => console.log("Proceeding to Checkout")}
-          >
-            Proceed to Checkout
-            {/* Replaced ChevronRight with IoChevronForwardOutline */}
-            <IoChevronForwardOutline className="ml-2 w-5 h-5" />
-          </button>
-          <p className="text-xs tracking-tight text-gray-500 mt-3 text-center">
-            Shipping, taxes, and discount codes calculated at checkout.
-          </p>
+          {cart && cart?.products?.length > 0 && (
+            <>
+              <button
+                className="w-full inline-flex items-center justify-center bg-orange-600 text-white py-4 rounded-xl font-bold text-md shadow-lg shadow-orange-300/50 hover:bg-orange-700 transition duration-300 transform hover:scale-[1.01]"
+                onClick={handleCheckout}
+                
+              >
+                Proceed to Checkout
+                {/* Replaced ChevronRight with IoChevronForwardOutline */}
+                <IoChevronForwardOutline className="ml-2 w-5 h-5" />
+              </button>
+              <p className="text-xs tracking-tight text-gray-500 mt-3 text-center">
+                Shipping, taxes, and discount codes calculated at checkout.
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -1,7 +1,9 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "../redux/slice/authSlice";
+import {mergeCart} from "../redux/slice/cartSlice";
+
 
 const Login = () => {
   const [mobile, setMobile] = useState("");
@@ -10,6 +12,25 @@ const Login = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const {user, guestId} = useSelector((state)=> state.auth);
+  const {cart} = useSelector((state)=> state.cart);
+
+  //Get redirect parameter and check if it's checkout o something
+  const redirect = new URLSearchParams(location.search).get("redirect") || "/";
+  const isCheckoutRedirect = redirect.includes("checkout");
+
+  useEffect(()=>{
+    if(user){
+      if(cart?.products.length > 0 && guestId){
+        dispatch(mergeCart({guestId, user})).then(() => {
+          navigate(isCheckoutRedirect ? "/checkout": "/");
+        });
+      } else {
+        navigate(isCheckoutRedirect ? "/checkout": "/");
+      }
+    }
+  }, [user, guestId, cart, navigate, isCheckoutRedirect, dispatch]);
 
   const { loading } = useSelector((state) => state.auth);
 
@@ -98,8 +119,18 @@ const Login = () => {
             } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500`}
           >
             {loading ? "Logging in..." : "LOGIN"}
+
           </button>
         </form>
+                <p className="mt-4 text-center text-sm text-gray-600">
+          Don't have an account?{" "}
+          <Link
+            to={`/register?redirect=${encodeURIComponent(redirect)}`} // Passes the current redirect parameter
+            className="font-medium text-orange-600 hover:text-orange-500 transition duration-150 ease-in-out"
+          >
+             Sign Up
+          </Link>
+        </p>
       </div>
     </div>
   );

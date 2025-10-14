@@ -54,7 +54,7 @@ const ProductGrid = ({ products, loading, error}) => {
         {/* Prev Button */}
         <button
           onClick={handlePrev}
-          className={`absolute top-1/2 left-0 transform -translate-x-1/4 -translate-y-1/2 z-10 p-4  bg-amber-300 rounded-r-full shadow-lg ${
+          className={`absolute top-1/2 left-0 transform -translate-x-1/4 -translate-y-1/2 z-10 p-4  bg-amber-300 hover:bg-amber-200 rounded-r-full shadow-lg ${
             startIndex === 0 ? "hidden" : ""
           }`}
           aria-label="Previous"
@@ -101,8 +101,8 @@ const ProductGrid = ({ products, loading, error}) => {
                     No Image
                   </div>
                 )}
-                <div className="absolute top-2 left-2 bg-yellow-400 text-xs font-bold px-2 py-1 rounded-full">
-                  {product.offer}
+                <div className="absolute top-2 left-2 bg-red-500 text-xs font-bold px-2 py-1 rounded-full shadow-lg">
+                  {product.offer || 'NEW'}
                 </div>
                 {/* Action Icons (Eye + Heart) */}
     <div className="absolute top-2 right-2  flex flex-col space-y-2
@@ -134,12 +134,12 @@ const ProductGrid = ({ products, loading, error}) => {
     </div>
               </div>
 
-              <div className="p-4">
-                <h3 className="text-xs font-semibold uppercase text-gray-400">
-                  {product.brand}
+              <div className="p-4 text-center">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-orange-500">
+                  {product.brand || "AARYAN PRINTS"}
                 </h3>
-                <p className="mt-1 text-sm">{product.description}</p>
-                <p className="mt-2 text-lg font-bold">{product.price}</p>
+                <p className="mt-1 text-sm font-medium text-gray-700 truncate">{product.description}</p>
+                <p className="mt-2 text-xl font-extrabold text-gray-900">₹{product.price}</p>
               </div>
             </Link>
           ))}
@@ -148,7 +148,7 @@ const ProductGrid = ({ products, loading, error}) => {
         {/* Next Button */}
         <button
           onClick={handleNext}
-          className={`absolute top-1/2 right-0 transform translate-x-1/4 -translate-y-1/2 z-10 p-4  bg-amber-300 rounded-l-full  shadow-lg ${
+          className={`absolute top-1/2 right-0 transform translate-x-1/4 -translate-y-1/2 z-10 p-4  bg-amber-300 hover:bg-amber-200 rounded-l-full  shadow-lg ${
             startIndex + itemsPerPage >= totalItems ? "hidden" : ""
           }`}
           aria-label="Next"

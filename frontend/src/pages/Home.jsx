@@ -40,7 +40,7 @@ const Home = () => {
   }, [dispatch]);
 
   return (
-    <div>
+    <div className="pt-4">
       <Hero />
       <NewArrivals products={products} />
       <Recommendations />

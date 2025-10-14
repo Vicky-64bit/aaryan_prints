@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { registerUser } from "../redux/slice/authSlice";
+import { mergeCart } from '../redux/slice/cartSlice';
 
 const Register = () => {
   const [gender, setGender] = useState('');
@@ -20,8 +21,32 @@ const Register = () => {
   const [resendTimer, setResendTimer] = useState(30);
 
   const otpRefs = useRef([]);
-  const navigate = useNavigate();
+
+
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const {user, guestId} = useSelector((state)=> state.auth);
+  const {cart} = useSelector((state)=> state.cart);
+
+  //Get redirect parameter and check if it's checkout o something
+  const redirect = new URLSearchParams(location.search).get("redirect") || "/";
+  const isCheckoutRedirect = redirect.includes("checkout");
+
+  useEffect(()=>{
+    if(user){
+      if(cart?.products.length > 0 && guestId){
+        dispatch(mergeCart({guestId, user})).then(() => {
+          navigate(isCheckoutRedirect ? "/checkout": "/");
+        });
+      } else {
+        navigate(isCheckoutRedirect ? "/checkout": "/");
+      }
+    }
+  }, [user, guestId, cart, navigate, isCheckoutRedirect, dispatch]);
+
+
+
   const { loading } = useSelector(state => state.auth);
 
   useEffect(() => { generateNewCaptcha(); }, []);
@@ -87,7 +112,7 @@ const Register = () => {
       const fullOtp = otp.join('');
       await dispatch(registerUser({ gender, firstName, lastName, email, mobile, password, otp: fullOtp })).unwrap();
       setMessage('Registration successful!');
-      navigate("/profile");
+      // navigate("/profile");
     } catch (error) {
       setMessage(error || 'Registration failed. Please try again.');
     }
@@ -189,6 +214,15 @@ const Register = () => {
             {loading ? 'Registering...' : 'START SHOPPING'}
           </button>
         </form>
+         <p className="mt-4 text-center text-sm text-gray-600">
+          Already have an account?{" "}
+          <Link
+            to={`/login?redirect=${encodeURIComponent(redirect)}`} // Passes the current redirect parameter to the login route
+            className="font-medium text-orange-600 hover:text-orange-500 transition duration-150 ease-in-out"
+          >
+            LogIn
+          </Link>
+        </p>
       </div>
     </div>
   );
