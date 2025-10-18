@@ -12,6 +12,8 @@ const subscriberRoutes = require("./routes/subscriberRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const productAdminRoutes = require("./routes/productAdminRoutes");
 const adminOrderRoutes = require("./routes/adminOrderRoutes");
+const contactRoutes = require("./routes/contactRoutes");
+dotenv.config();
 
 const app = express();
 // Allow requests from your frontend
@@ -24,7 +26,6 @@ app.use(
 app.use(express.json());
 
 
-dotenv.config();
 
 const PORT = (process.env.PORT) || 3000;
 
@@ -44,6 +45,7 @@ app.use("/api/checkout", checkoutRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api", subscriberRoutes);
+app.use("/api/contact", contactRoutes);
 
 
 // Admin

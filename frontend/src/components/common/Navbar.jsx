@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+// import {cart} from "../../redux/slice/cartSlice";
+// import {user} from "../../redux/slice/authSlice";
 
 import {
   HiOutlineUser,
@@ -11,14 +13,23 @@ import CartDrawer from "../layout/CartDrawer";
 import { IoMdClose } from "react-icons/io";
 import { useSelector } from "react-redux";
 
+
 const Navbar = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [navDrawerOpen, setNavDrawerOpen] = useState(false);
 
-  const {cart} = useSelector((state)=> state.cart);
+  const { cart } = useSelector((state) => state.cart );
+   const { user } = useSelector((state) => state.auth  );
 
-  const cartItemCount = cart?.products?.reduce(
-    (total, product)=> total + product.quantity, 0) || 0;
+ 
+  // console.log(user, cart);
+
+
+  const cartItemCount = (cart?.products ?? []).reduce(
+  (total, product) => total + (product?.quantity || 0),
+  0
+);
+
 
 
   const toggleNavDrawer = () => {
@@ -54,21 +65,21 @@ const Navbar = () => {
           </Link>
 
           <Link
-            to="#"
+            to="/services"
             className="text-gray-700 hover:text-black text-sm font-medium uppercase"
           >
             Services
           </Link>
 
           <Link
-            to="#"
+            to="/about"
             className="text-gray-700 hover:text-black text-sm font-medium uppercase"
           >
             About Us
           </Link>
 
           <Link
-            to="#"
+            to="/contactus"
             className="text-gray-700 hover:text-black text-sm font-medium uppercase"
           >
             Contact Us
@@ -76,6 +87,13 @@ const Navbar = () => {
         </div>
         {/* Right -Icons */}
         <div className="flex items-center space-x-4">
+          {user && user.role === "admin" && (
+             <Link to="/admin" className="hover:text-black border rounded-lg p-1 text-red-300"
+             >
+           Admin
+          </Link>
+          )}
+          
           <Link to="/profile" className="hover:text-black">
             <HiOutlineUser className="h-6 w-6  text-orange-500" />
           </Link>
@@ -128,21 +146,21 @@ const Navbar = () => {
               Shop
             </Link>
             <Link
-              to="#"
+              to="/services"
               onClick={toggleNavDrawer}
               className="block text-gray-600 hover:text-black"
             >
               Services
             </Link>
             <Link
-              to="#"
+              to="/about"
               onClick={toggleNavDrawer}
               className="block text-gray-600 hover:text-black"
             >
               About Us
             </Link>
             <Link
-              to="#"
+              to="/contactus"
               onClick={toggleNavDrawer}
               className="block text-gray-600 hover:text-black"
             >

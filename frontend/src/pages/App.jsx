@@ -12,10 +12,13 @@ import OrderConfirmationPage from "../components/cart/OrderConfirmationPage";
 import MyOrders from "../components/cart/MyOrders";
 import ProductDetails from "../components/products/ProductDetails";
 import AdminPanel from "../components/admin/AdminPanel";
+import Contact from "../components/common/Contact";
 import ProtectedRoute from "../components/ProtectedRoute";
 
 import { Provider } from "react-redux";
 import store from "../redux/store";
+import About from "../components/common/About";
+import Services from "../components/common/Services";
 
 function App() {
   return (
@@ -37,6 +40,9 @@ function App() {
 
             <Route path="/bag" element={<BagPage />} />
             <Route path="/myorders" element={<MyOrders />} />
+            <Route path="/contactus" element={<Contact />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/services" element={<Services />} />
             <Route
               path="/collections/:collection"
               element={<CollectionPage />}

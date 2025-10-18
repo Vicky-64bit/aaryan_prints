@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
 import { createCheckout } from "../../redux/slice/checkoutSlice";
 import axios from "axios";
+ import { clearCart } from "../../redux/slice/cartSlice";
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -62,6 +63,8 @@ const CheckoutPage = () => {
 
     // ✅ Redirect to order confirmation page
     navigate(`/order-confirmation/${finalOrder._id}`);
+    dispatch(clearCart());   
+
   } catch (error) {
     console.error("Payment/finalize error:", error);
   }

@@ -1,170 +1,176 @@
-import React from "react";
-import { useState, useEffect } from "react";
-
-
-const products = [
-        {
-            id: 1,
-            title: "Classic Tee",
-            price: 599,
-            category: "Men",
-            description: "Comfort cotton tee",
-            sizes: ["S", "M", "L"],
-            stock: { S: 10, M: 25, L: 5 },
-            images: ["https://placehold.co/400x400"],
-            enabled: true,
-        },
-        {
-            id: 2,
-            title: "Denim Jacket",
-            price: 2499,
-            category: "Women",
-            description: "Warm denim jacket",
-            sizes: ["M", "L"],
-            stock: { M: 3, L: 2 },
-            images: ["https://placehold.co/400x400"],
-            enabled: true,
-        },
-    ]
-
- const orders= [
-        {
-            id: 101,
-            date: "2025-09-28",
-            customerId: 1,
-            total: 1198,
-            status: "pending",
-            items: [{ productId: 1, qty: 2, price: 599 }],
-        },
-        {
-            id: 102,
-            date: "2025-09-25",
-            customerId: 2,
-            total: 2499,
-            status: "shipped",
-            items: [{ productId: 2, qty: 1, price: 2499 }],
-        },
-    ]
-    const load = (key, fallback) => {
-    try {
-        const v = localStorage.getItem(key);
-        if (!v) return fallback;
-        const parsed = JSON.parse(v);
-        // ensure it is always an array
-        return Array.isArray(parsed) ? parsed : fallback;
-    } catch (e) {
-        return fallback;
-    }
-};
-
-const save = (key, data) => localStorage.setItem(key, JSON.stringify(data));
-    function useStorage(key, initial) {
-        const [state, setState] = useState(() => load(key, initial));
-        useEffect(() => {
-            save(key, state);
-        }, [key, state]);
-        return [state, setState];
-    }
-
+import React, { useState } from "react";
+import { useStorage } from './hooks/useStorage';
+import { DEFAULT_DATA } from "./utils/constants";
+import Card from './Card';
+import Button from './Button';
 
 const OrderManagementPage = () => {
+  const [data, setData] = useStorage("admin_data_v1", DEFAULT_DATA);
+  const [filters, setFilters] = useState({ orderStatus: "all" });
 
-    const [ordersData, setOrdersData] = useStorage("admin_data_v1", orders); 
-// now ordersData will always be an array
+  const updateOrderStatus = (orderId, status) => {
+    setData(prev => ({
+      ...prev,
+      orders: prev.orders.map(o => 
+        o.id === orderId ? { ...o, status } : o
+      )
+    }));
+  };
 
+  const printInvoice = (order) => {
+    const win = window.open("", "_blank", "width=800,height=600");
+    const itemsHtml = order.items
+      .map((it) => {
+        const p = data.products.find(x => x.id === it.productId) || {
+          title: "Unknown Product",
+        };
+        return `
+          <tr>
+            <td>${p.title}</td>
+            <td>${it.qty}</td>
+            <td>₹${it.price}</td>
+            <td>₹${it.qty * it.price}</td>
+          </tr>
+        `;
+      })
+      .join("");
+    
+    win.document.write(`
+      <html>
+        <head>
+          <title>Invoice #${order.id}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            th { background-color: #f5f5f5; }
+            h1 { color: #333; }
+          </style>
+        </head>
+        <body>
+          <h1>Invoice #${order.id}</h1>
+          <p><strong>Date:</strong> ${order.date}</p>
+          <p><strong>Status:</strong> ${order.status}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>${itemsHtml}</tbody>
+          </table>
+          <h3>Total Amount: ₹${order.total}</h3>
+        </body>
+      </html>
+    `);
+    win.document.close();
+    win.print();
+  };
 
-     const [filters, setFilters] = useState({ orderStatus: "all" });
-
-  const [selectedOrder, setSelectedOrder] = useState(null);
-
-  // Simple invoice generator (new window + print)
-    const printInvoice = (order) => {
-        const win = window.open("", "_blank", "width=800,height=600");
-        const itemsHtml = order.items
-            .map((it) => {
-                const p = products.find((x) => x.id === it.productId) || {
-                    title: "Unknown",
-                };
-                return `<tr><td>${p.title}</td><td>${it.qty}</td><td>${it.price
-                    }</td><td>${it.qty * it.price}</td></tr>`;
-            })
-            .join("");
-        win.document.write(
-            `<html><head><title>Invoice #${order.id}</title></head><body><h1>Invoice #${order.id}</h1><p>Date: ${order.date}</p><table border='1' cellpadding='8'><thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>${itemsHtml}</tbody></table><h3>Total: ${order.total}</h3></body></html>`
-        );
-        win.document.close();
-        win.print();
-    };
-
-
-     // update order status
- const updateOrderStatus = (orderId, status) => {
-  setOrdersData((prevOrders) =>
-    prevOrders.map((o) =>
-      o.id === orderId ? { ...o, status } : o
-    )
-  );
-};
-
-
-  // ✅ use `data` not the static `orders`
-  const filteredOrders = ordersData.filter((o) =>
+  const filteredOrders = data?.orders?.filter(o =>
   filters.orderStatus === "all" ? true : o.status === filters.orderStatus
-);
+) || [];
+
+
+  const getStatusColor = (status) => {
+    const colors = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      shipped: 'bg-blue-100 text-blue-800',
+      delivered: 'bg-green-100 text-green-800',
+      cancelled: 'bg-red-100 text-red-800'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
 
   return (
-    <section>
-      <h2 className="text-2xl font-semibold mb-3">Orders</h2>
-      <div className="flex gap-3 mb-3">
+    <section className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-900">Order Management</h2>
+        <div className="text-sm text-gray-600">
+          {filteredOrders.length} order{filteredOrders.length !== 1 ? 's' : ''}
+        </div>
+      </div>
+
+      <div className="flex gap-3 mb-6">
         <select
           value={filters.orderStatus}
-          onChange={(e) =>
-            setFilters((f) => ({ ...f, orderStatus: e.target.value }))
-          }
-          className="px-3 py-2 border rounded text-black bg-white"
+          onChange={(e) => setFilters(f => ({ ...f, orderStatus: e.target.value }))}
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
-          <option value="all">All</option>
+          <option value="all">All Orders</option>
           <option value="pending">Pending</option>
           <option value="shipped">Shipped</option>
           <option value="delivered">Delivered</option>
           <option value="cancelled">Cancelled</option>
         </select>
       </div>
-      <div className="space-y-3">
-        {filteredOrders.map((o) => (
-          <div
-            key={o.id}
-            className="bg-white text-black p-3 rounded shadow flex justify-between items-center"
-          >
-            <div>
-              <div className="font-semibold">Order #{o.id}</div>
-              <div className="text-sm">
-                Date: {o.date} • Total: ₹{o.total}
+
+      <div className="space-y-4">
+        {filteredOrders.length === 0 ? (
+          <Card className="text-center py-12">
+            <div className="text-4xl mb-4">📋</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No orders found
+            </h3>
+            <p className="text-gray-600">
+              {filters.orderStatus === "all" 
+                ? "No orders have been placed yet" 
+                : `No ${filters.orderStatus} orders found`
+              }
+            </p>
+          </Card>
+        ) : (
+          filteredOrders.map((order) => (
+            <Card key={order.id} className="p-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="font-semibold text-gray-900 text-lg">
+                      Order #{order.id}
+                    </h3>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                      {order.status}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <div>Date: {order.date}</div>
+                    <div>Customer ID: {order.customerId}</div>
+                    <div className="font-medium text-gray-900">
+                      Total: ₹{order.total}
+                    </div>
+                    <div>
+                      Items: {order.items.length} product{order.items.length !== 1 ? 's' : ''}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 flex-wrap">
+                  <select
+                    value={order.status}
+                    onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="shipped">Shipped</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                  
+                  <Button
+                    variant="default"
+                    onClick={() => printInvoice(order)}
+                    className="flex items-center gap-2"
+                  >
+                    📄 Invoice
+                  </Button>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <select
-                value={o.status}
-                onChange={(e) => updateOrderStatus(o.id, e.target.value)}
-                className="px-2 py-1 border rounded"
-              >
-                <option value="pending">pending</option>
-                <option value="shipped">shipped</option>
-                <option value="delivered">delivered</option>
-                <option value="cancelled">cancelled</option>
-              </select>
-              <button
-                className="px-3 py-1 border rounded"
-                onClick={() => {
-                  setSelectedOrder(o);
-                  printInvoice(o);
-                }}
-              >
-                Invoice
-              </button>
-            </div>
-          </div>
-        ))}
+            </Card>
+          ))
+        )}
       </div>
     </section>
   );

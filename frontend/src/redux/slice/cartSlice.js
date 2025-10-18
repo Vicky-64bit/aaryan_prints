@@ -75,7 +75,7 @@ export const mergeCart = createAsyncThunk("cart/mergeCart", async ({guestId, use
         const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/cart/merge`, {guestId, user},
             {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+                    Authorization: `Bearer ${localStorage.getItem("usertoken")}`,
                 },
             }
 

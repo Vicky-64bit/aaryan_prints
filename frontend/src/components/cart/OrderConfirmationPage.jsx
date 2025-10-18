@@ -1,145 +1,202 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 
+// Icon for the confirmation header (mimicking lucide-react)
+const CheckCircle = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+    <path d="M9 11l3 3L22 4"></path>
+  </svg>
+);
+
 const OrderConfirmationPage = () => {
-  const { id } = useParams(); // get order ID from URL
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  const [orderDetails, setOrderDetails] = useState(null);
+  const { id } = useParams();
+  const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // Fetch order details
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const token =
-          localStorage.getItem("usertoken") || ""; // JWT token
-        const response = await axios.get(
+        const { data } = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/api/orders/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          { headers: { Authorization: `Bearer ${localStorage.getItem("usertoken")}` } }
         );
-        setOrderDetails(response.data);
-        setLoading(false);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to fetch order details.");
+        setOrder(data);
+      } catch (error) {
+        console.error("Error fetching order:", error);
+      } finally {
         setLoading(false);
       }
     };
 
-    if (!id) {
-      navigate("/"); // if no order ID, redirect home
-    } else {
-      fetchOrder();
-    }
-  }, [id, navigate]);
+    fetchOrder();
+  }, [id]);
+ 
 
-  const handlePrint = () => window.print();
-  const handleContinueShopping = () => navigate("/");
-
-  if (loading)
-    return <div className="text-center p-10 font-medium">Loading order...</div>;
-
-  if (error)
-    return (
-      <div className="text-center p-10 text-red-600 font-medium">{error}</div>
-    );
-
-  if (!orderDetails)
-    return (
-      <div className="text-center p-10 font-medium">
-        Order not found.
+  // Loading State UI
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="p-8 bg-white rounded-xl shadow-lg">
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-orange-500"></div>
+          <span className="text-gray-600 font-medium">Loading order details...</span>
+        </div>
       </div>
-    );
+    </div>
+  );
 
-  // Calculate delivery date dynamically (e.g., 7 days after order)
-  const deliveryDate = new Date(orderDetails.createdAt);
-  deliveryDate.setDate(deliveryDate.getDate() + 7);
+  // Not Found State UI
+  if (!order) return (
+    <div className="p-10 text-center bg-gray-50 min-h-screen flex items-center justify-center">
+      <div className="p-8 bg-white rounded-xl shadow-lg">
+        <h1 className="text-2xl font-bold text-red-500">Order Not Found</h1>
+        <p className="mt-2 text-gray-600">We could not retrieve the details for this order ID.</p>
+        <Link to="/" className="mt-4 inline-block text-orange-600 hover:text-orange-700 font-medium transition duration-150">
+          Go to Homepage
+        </Link>
+      </div>
+    </div>
+  );
+
+   // Calculate pricing components for a detailed breakdown
+  const totalItemsPrice = order.orderItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  // Calculate shipping fee based on the difference (or 0 if total is less than items price, though unlikely in e-commerce)
+  const shippingFee = Math.max(0, order.totalPrice - totalItemsPrice);
+  const isShippingCharged = shippingFee > 0.01;
 
   return (
-    <>
-      <style>
-        {`
-          @media print {
-            .no-print {
-              display: none;
-            }
-          }
-        `}
-      </style>
-      <div className="bg-gray-100 min-h-screen p-4 sm:p-8">
-        <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm p-6 sm:p-8">
+     <div className="min-h-screen bg-gray-50 font-['Inter'] flex items-start justify-center p-4 sm:p-8">
+      {/* Confirmation Card - Responsive width and shadow */}
+      <div className="w-full max-w-4xl bg-white p-6 sm:p-10 mt-8 mb-8 rounded-3xl shadow-2xl transition-all duration-300">
+        
+        {/* Header and Confirmation Icon */}
+        <div className="text-center mb-10 border-b pb-6">
+          <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4 animate-bounce" />
+          <h1 className="text-4xl font-extrabold text-gray-800 mb-2">
+            Order Confirmed!
+          </h1>
+          <p className="text-lg text-gray-500">
+            Thank you for your purchase. Your order is being processed.
+          </p>
+        </div>
 
-          {/* Header */}
-          <div className="text-center mb-6">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-16 h-16 mx-auto text-green-500 mb-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h1 className="text-2xl font-bold text-gray-800">Order Confirmed!</h1>
-            <p className="mt-2 text-gray-600">Thank you for your purchase. Your order has been placed successfully.</p>
-          </div>
+        {/* Order Details Grid - Responsive 1 or 2 columns */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          
+          {/* Shipping Details Block - Updated */}
+          <div className="space-y-3 p-4 bg-gray-50 rounded-xl shadow-sm border border-gray-100">
+            <h2 className="text-xl font-semibold text-gray-700 border-b pb-2">Shipping Details</h2>
+            
+            {/* Order ID remains */}
+            <p className="text-gray-600 text-sm sm:text-base">
+              <span className="font-medium text-gray-800">Order ID:</span> 
+              <span className="ml-2 font-mono text-indigo-600">{order._id}</span>
+            </p>
 
-          {/* Order Details */}
-          <div className="border-t border-b border-gray-200 py-6 mb-6">
-            <div className="grid grid-cols-2 gap-y-2">
-              <span className="text-sm font-medium text-gray-600">Order ID:</span>
-              <span className="text-sm font-semibold text-gray-800 justify-self-end text-right">{orderDetails._id}</span>
-
-              <span className="text-sm font-medium text-gray-600">Payment Method:</span>
-              <span className="text-sm font-semibold text-gray-800 justify-self-end text-right">{orderDetails.paymentMethod}</span>
-
-              <span className="text-sm font-medium text-gray-600">Total Amount:</span>
-              <span className="text-sm font-semibold text-gray-800 justify-self-end text-right">₹{orderDetails.totalPrice.toFixed(2)}</span>
-
-              <span className="text-sm font-medium text-gray-600">Expected Delivery:</span>
-              <span className="text-sm font-semibold text-gray-800 justify-self-end text-right">{deliveryDate.toDateString()}</span>
+            {/* Replaced Customer/Mobile with Shipping Address */}
+            <div className="text-gray-600 text-sm sm:text-base pt-1">
+              <span className="font-medium text-gray-800 block mb-1">Shipping Address:</span> 
+              <p className="whitespace-pre-wrap leading-relaxed">
+                {order.shippingAddress?.address || "Address not available"}
+              </p>
+              <p className="whitespace-pre-wrap leading-relaxed">
+                {order.shippingAddress?.city || "Address not available"}
+              </p>
+              <p className="whitespace-pre-wrap leading-relaxed">
+                {order.shippingAddress?.postalCode || "Address not available"}
+              </p>
+              <p className="whitespace-pre-wrap leading-relaxed">
+                {order.shippingAddress?.country || "Address not available"}
+              </p>
             </div>
           </div>
 
-          {/* Product List */}
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Order Summary</h2>
-            {orderDetails.orderItems.map((product, idx) => (
-              <div key={product._id || idx} className="flex items-start space-x-4 mb-4">
-                <div className="flex-shrink-0 w-20 h-24 bg-gray-200 rounded-md overflow-hidden">
-                  <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-medium text-gray-900">{product.name}</h3>
-                  <p className="mt-1 text-sm text-gray-600">Qty: {product.quantity}</p>
-                  <p className="mt-1 text-sm font-semibold text-gray-900">₹{(product.price * product.quantity).toFixed(2)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Delivery Address */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-sm font-semibold text-gray-800 mb-2">Delivery Address</h3>
-            <p className="text-sm text-gray-700 font-medium">Name: <span className="font-normal">{orderDetails.shippingAddress.firstName} {orderDetails.shippingAddress.lastName}</span></p>
-            <p className="text-sm text-gray-700 font-medium">Address: <span className="font-normal">{orderDetails.shippingAddress.address}, {orderDetails.shippingAddress.city}, {orderDetails.shippingAddress.postalCode}, {orderDetails.shippingAddress.country}</span></p>
-            <p className="text-sm text-gray-700 font-medium">Mobile: <span className="font-normal">{orderDetails.shippingAddress.phone}</span></p>
-          </div>
-
-          {/* Buttons */}
-          <div className="mt-6 space-y-4 no-print">
-            <button onClick={handlePrint} className="w-full py-3 text-white bg-orange-500 hover:bg-orange-600 rounded-md font-semibold transition-colors duration-200">
-              PRINT INVOICE
-            </button>
-            <button onClick={handleContinueShopping} className="w-full py-3 text-orange-500 border-2 border-orange-500 rounded-md font-semibold hover:bg-orange-50 transition-colors duration-200">
-              CONTINUE SHOPPING
-            </button>
+          {/* Total Price Block - Highlighted */}
+          <div className="space-y-3 p-4 bg-orange-50 rounded-xl shadow-sm border border-orange-200">
+            <h2 className="text-xl font-semibold text-orange-700 border-b pb-2">Order Summary</h2>
+            <div className="flex justify-between items-center">
+              <span className="font-medium text-gray-800">Payment Status:</span> 
+              <span className="font-bold text-green-600">{order.paymentStatus || "Paid"}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-medium text-gray-800">Est. Delivery:</span> 
+              <span className="text-gray-600">{order.deliveryEstimate || "3-7 Business Days"}</span>
+            </div>
+            <div className="flex justify-between items-center pt-2 border-t border-orange-300">
+              <span className="font-extrabold text-lg text-gray-800">Total Paid:</span> 
+              <span className="text-3xl font-extrabold text-orange-600">₹{order.totalPrice?.toFixed(2)}</span>
+            </div>
           </div>
         </div>
+        
+       {/* Products Summary Section */}
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Items Ordered</h2>
+        <div className="space-y-4 border border-gray-200 p-4 rounded-xl shadow-inner">
+          
+          {/* Item List - Updated to include images */}
+          {order.orderItems?.map((item) => (
+            <div key={item._id} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0">
+              
+              {/* Product Image and Details */}
+              <div className="flex items-center space-x-4">
+                <img 
+                  src={item?.image} 
+                  alt={item.name} 
+                  className="w-14 h-14 object-cover rounded-lg flex-shrink-0 border border-gray-200"
+                  // Fallback in case placeholder fails
+                  onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/60x60/e0e0e0/555555?text=Item"; }} 
+                />
+                <div className="text-gray-700 font-medium">
+                  {item.name}
+                  <span className="ml-2 text-sm text-gray-500 font-normal">
+                    (Qty: {item.quantity})
+                  </span>
+                </div>
+              </div>
+              
+              {/* Price */}
+              <div className="text-lg font-semibold text-gray-800 mt-1 sm:mt-0">
+                ₹{(item.price * item.quantity).toFixed(2)}
+              </div>
+            </div>
+          ))}
+
+          {/* Pricing breakdown */}
+          <div className="pt-4 space-y-2 text-right text-gray-700">
+            <div className="flex justify-between">
+                <span className="text-sm">Subtotal (Products):</span>
+                <span className="font-medium">₹{totalItemsPrice.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+                <span className="text-sm">Shipping & Handling:</span>
+                <span className="font-medium text-green-600">
+                    {isShippingCharged ? `₹${shippingFee.toFixed(2)}` : 'FREE'}
+                </span>
+            </div>
+            {/* Final Total (Repeating for emphasis) */}
+            <div className="flex justify-between text-xl font-bold text-orange-600 border-t-2 border-dashed border-gray-200 pt-3 mt-3">
+                <span>TOTAL PAID:</span>
+                <span>₹{order.totalPrice?.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Link */}
+        <div className="text-center mt-10">
+          <Link 
+            to="/" 
+            className="inline-flex items-center px-8 py-4 border border-transparent text-lg font-semibold rounded-full shadow-lg text-white bg-orange-500 hover:bg-orange-600 transition duration-300 ease-in-out transform hover:scale-[1.02] active:scale-95"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-3" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+            </svg>
+            Continue Shopping
+          </Link>
+        </div>
+
       </div>
-    </>
+    </div>
   );
 };
 
