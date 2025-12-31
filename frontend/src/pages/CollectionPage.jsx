@@ -1,238 +1,172 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import FilterSidebar from "./FilterSidebar";
-import { Link, useParams, useSearchParams } from "react-router-dom";
-import axios from "axios";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProductsByFilters } from "../redux/slice/productSlice";
+import ProductCard from "./ProductCard";
+import LoadingSpinner from "./LoadingSpinner";
+import ErrorMessage from "./ErrorMessage";
 
 const CollectionPage = () => {
-  // const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
-  const [selectedFilters, setSelectedFilters] = useState({});
-  // const [loading, setLoading] = useState(true);
-  // const [error, setError] = useState(null);
-
   const { collection: collectionName } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const dispatch = useDispatch();
+
   const { products, loading, error } = useSelector((state) => state.products);
-  const queryParams = Object.fromEntries([...searchParams]);
+  const [selectedFilters, setSelectedFilters] = useState({});
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sortBy, setSortBy] = useState(searchParams.get("sortBy") || "popularity");
+
+  const queryParams = useMemo(() => Object.fromEntries([...searchParams]), [searchParams]);
 
   useEffect(() => {
-    dispatch(
-      fetchProductsByFilters({ collection: collectionName, ...queryParams })
-    );
-  }, [dispatch, collectionName, searchParams]);
+    if (sidebarOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => { document.body.style.overflow = "unset"; };
+  }, [sidebarOpen]);
 
-  // Fetch products from backend
-  // const fetchProducts = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const query = new URLSearchParams(selectedFilters).toString();
-  //     const { data } = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/products?${query}`);
-  //     setProducts(data);
-  //     setFilteredProducts(data); // initially all products
-  //   } catch (err) {
-  //     setError(err.message || "Failed to fetch products");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   fetchProducts();
-  // }, [selectedFilters]); // refetch whenever filters change
-
-  // Update selected filters
-  // Update selected filters and sync to URL
-  const handleFilterChange = (filterName, option) => {
+  const handleFilterChange = useCallback((filterName, option) => {
     setSelectedFilters((prev) => {
       const newFilters = { ...prev };
-
       if (newFilters[filterName]?.includes(option)) {
-        // Remove the option
-        newFilters[filterName] = newFilters[filterName].filter(
-          (item) => item !== option
-        );
+        newFilters[filterName] = newFilters[filterName].filter((item) => item !== option);
         if (newFilters[filterName].length === 0) delete newFilters[filterName];
       } else {
-        // Add the option
-        newFilters[filterName] = newFilters[filterName]
-          ? [...newFilters[filterName], option]
-          : [option];
+        newFilters[filterName] = newFilters[filterName] ? [...newFilters[filterName], option] : [option];
       }
 
-      // Build query params using multiple entries for the same key
       const params = new URLSearchParams();
       Object.entries(newFilters).forEach(([key, values]) => {
-        values.forEach((value) => {
-          params.append(key.toLowerCase(), value); // lowercase key
-        });
+        values.forEach((value) => params.append(key.toLowerCase(), value));
       });
-
-      setSearchParams(params); // update URL
+      if (sortBy && sortBy !== "popularity") params.set("sortBy", sortBy);
+      setSearchParams(params);
       return newFilters;
     });
-  };
+  }, [sortBy, setSearchParams]);
 
-  const clearAllFilters = () => {
+  const clearAllFilters = useCallback(() => {
     setSelectedFilters({});
-  };
+    const params = new URLSearchParams();
+    if (sortBy && sortBy !== "popularity") params.set("sortBy", sortBy);
+    setSearchParams(params);
+  }, [sortBy, setSearchParams]);
 
-  // Dynamic filtering logic (if you want extra frontend filtering)
+  const handleSortChange = useCallback((value) => {
+    setSortBy(value);
+    const params = new URLSearchParams([...searchParams]);
+    if (value && value !== "popularity") params.set("sortBy", value);
+    else params.delete("sortBy");
+    setSearchParams(params);
+  }, [searchParams, setSearchParams]);
+
   useEffect(() => {
-    if (!products.length) return;
-    let filtered = products.filter((product) => {
-      for (const filterName in selectedFilters) {
-        if (selectedFilters[filterName].length === 0) continue;
-        let matches = false;
-        const filterOptions = selectedFilters[filterName];
+    dispatch(fetchProductsByFilters({ collection: collectionName, ...queryParams }));
+  }, [dispatch, collectionName, queryParams]);
 
-        switch (filterName) {
-          case "CATEGORY":
-            if (filterOptions.includes(product.category)) matches = true;
-            break;
-          case "GENDER":
-            if (filterOptions.includes(product.gender)) matches = true;
-            break;
-          case "PRICE":
-            filterOptions.forEach((option) => {
-              const [min, max] = option.includes("Under")
-                ? [0, 500]
-                : option
-                    .split(" - ")
-                    .map((p) => parseInt(p.replace("₹", ""), 10));
-              if (product.price >= min && product.price <= max) matches = true;
-            });
-            break;
-          case "COLOR":
-            if (filterOptions.includes(product.color)) matches = true;
-            break;
-          default:
-            if (
-              product[filterName.toLowerCase()] &&
-              filterOptions.includes(product[filterName.toLowerCase()])
-            )
-              matches = true;
-            break;
-        }
-
-        if (!matches) return false;
+  useEffect(() => {
+    const filters = {};
+    for (const [key, value] of searchParams.entries()) {
+      if (key !== "sortBy") {
+        filters[key] = filters[key] ? [...filters[key], value] : [value];
       }
-      return true;
-    });
-    setFilteredProducts(filtered);
-  }, [products, selectedFilters]);
+    }
+    setSelectedFilters(filters);
+  }, []);
 
-  if (loading) return <p className="text-center mt-20">Loading...</p>;
-  if (error)
-    return <p className="text-center mt-20 text-red-500">Error: {error}</p>;
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage message={error} />;
 
   return (
-    <div className="bg-white mt-28 mb-4 min-h-screen font-sans">
-      <div className="py-8 text-center">
-        <h1 className="text-3xl font-serif font-light italic text-gray-800">
-          Collections
-        </h1>
-      </div>
+    <div className="bg-white min-h-screen font-sans antialiased">
+      <header className="pt-32 pb-12 text-center bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4">
+          <h1 className="text-3xl md:text-5xl font-serif font-light text-gray-900 mb-2 capitalize">
+            {collectionName ? collectionName.replace(/-/g, ' ') : "Shop All"}
+          </h1>
+          <p className="text-gray-400 uppercase tracking-[0.2em] text-[9px] font-bold">
+            Essential Collection
+          </p>
+        </div>
+      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row space-y-8 md:space-y-0 md:space-x-8">
-        <FilterSidebar
-          selectedFilters={selectedFilters}
-          handleFilterChange={handleFilterChange}
-          clearAllFilters={clearAllFilters}
-        />
-
-        <div className="flex-1">
-          <div className="flex justify-between items-center mb-6">
-            <div className="text-gray-600 font-medium">
-              <span className="text-lg text-gray-900 font-semibold mr-1">
-                {products.length}
-              </span>
-              Products
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-6 md:py-10">
+        <div className="flex flex-col lg:flex-row gap-8">
+          
+          {/* SIDEBAR */}
+          <aside className={`fixed inset-y-0 left-0 z-50 w-full sm:w-80 bg-white transform transition-transform duration-500 ease-in-out flex flex-col lg:relative lg:translate-x-0 lg:z-0 lg:w-64 lg:bg-transparent lg:block ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+            <div className="flex lg:hidden justify-between items-center px-6 py-5 border-b">
+              <span className="font-bold uppercase tracking-widest text-xs">Filter By</span>
+              <button onClick={() => setSidebarOpen(false)} className="p-2">
+                <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-600 font-medium text-sm">SORT BY</span>
-              <select
-                className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 text-sm"
-                value={searchParams.get("sort") || ""}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  const params = new URLSearchParams([...searchParams]);
 
-                  if (value) {
-                    params.set("sortBy", value); // add sort to query params
-                  } else {
-                    params.delete("sortBy"); // remove if empty
-                  }
-
-                  setSearchParams(params);
-                }}
-              >
-                <option value="popularity">Best Selling</option>
-                <option value="newest">Newest</option>
-                <option value="priceAsc">Price: Low to High</option>
-                <option value="priceDesc">Price: High to Low</option>
-              </select>
+            <div className="flex-1 overflow-y-auto px-6 py-4 lg:p-0 lg:sticky lg:top-32 lg:max-h-[calc(100vh-160px)]">
+              <FilterSidebar
+                selectedFilters={selectedFilters}
+                handleFilterChange={handleFilterChange}
+                clearAllFilters={clearAllFilters}
+              />
             </div>
-          </div>
 
-          <div className="flex flex-wrap gap-2 mb-6">
-            {Object.entries(selectedFilters).map(([filterName, options]) =>
-              options.map((option, index) => (
-                <span
-                  key={`${filterName}-${index}`}
-                  className="bg-gray-200 text-gray-800 text-sm font-medium py-1 px-3 rounded-full flex items-center space-x-1"
+            <div className="p-4 border-t bg-white lg:hidden">
+                <button onClick={() => setSidebarOpen(false)} className="w-full py-4 bg-black text-white font-bold uppercase tracking-widest text-[10px]">
+                    Show Items
+                </button>
+            </div>
+          </aside>
+
+          {/* PRODUCT AREA */}
+          <div className="flex-1">
+            {/* STICKY TOOLBAR */}
+            <div className="sticky top-[70px] lg:relative lg:top-0 z-30 bg-white py-3 lg:py-0 mb-6 border-b border-gray-100 lg:border-none px-2 lg:px-0">
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="lg:hidden flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 rounded-md font-bold text-[10px] uppercase tracking-widest"
                 >
-                  <span>{option}</span>
-                  <button
-                    onClick={() => handleFilterChange(filterName, option)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      className="w-4 h-4"
-                    >
-                      <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                    </svg>
-                  </button>
-                </span>
-              ))
-            )}
-          </div>
+                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                   Filters
+                </button>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {products.map((product) => (
-              <Link
-                to={`/product/${product._id}`}
-                key={product._id}
-                className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col justify-end relative transition-all duration-300 hover:scale-105 hover:shadow-lg"
-              >
-                <div className="relative">
-                  {product.specialPrice && (
-                    <span className="absolute top-2 left-2 bg-black text-white text-xs font-semibold py-1 px-2 rounded-full z-10">
-                      {product.specialPrice}
-                    </span>
-                  )}
-                  <img
-                    src={product.images[0]?.url}
-                    alt={product.name}
-                    className="w-full h-auto"
-                  />
+                <div className="flex-1 lg:flex-none">
+                   <select
+                    className="w-full lg:w-48 bg-gray-50 border-none rounded-md px-4 py-3 text-[10px] font-bold uppercase tracking-widest focus:ring-0 cursor-pointer appearance-none text-center"
+                    value={sortBy}
+                    onChange={(e) => handleSortChange(e.target.value)}
+                  >
+                    <option value="popularity">Sort: Best Sellers</option>
+                    <option value="newest">Sort: Newest</option>
+                    <option value="priceAsc">Price: Low - High</option>
+                    <option value="priceDesc">Price: High - Low</option>
+                  </select>
                 </div>
-                <div className="p-4 text-center bg-gray-50 border-t border-gray-200">
-                  <h3 className="text-base font-medium text-gray-800">
-                    {product.name}
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">{`₹${product.price}`}</p>
-                </div>
-              </Link>
-            ))}
+              </div>
+            </div>
+
+            {/* PRODUCT GRID: Updated for 2-column mobile */}
+            {products.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-x-3 gap-y-8 md:gap-x-8 md:gap-y-12">
+                {products.map((product) => (
+                  <ProductCard key={product._id} product={product} />
+                ))}
+              </div>
+            ) : (
+              <div className="py-20 text-center">
+                <p className="text-gray-400 text-xs tracking-widest uppercase">No products found</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
     </div>
   );
 };

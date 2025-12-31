@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   LineChart,
   Line,
@@ -8,7 +9,11 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { Link } from "react-router-dom";
+
+// Redux Actions
+import { fetchAllOrders } from "../../redux/slice/adminOrderSlice";
+import { fetchAdminProducts, createProduct, updateProduct, deleteProduct } from "../../redux/slice/adminProductSlice";
+import { fetchUsers } from "../../redux/slice/adminSlice";
 
 // Components
 import Sidebar from "./Sidebar";
@@ -18,17 +23,7 @@ import Modal from "./Modal";
 import Button from "./Button";
 import Card from "./Card";
 
-// Hooks & Utils
-import { useStorage } from "./hooks/useStorage";
-import {
-  uid,
-  formatCurrency,
-  formatDate,
-  calculateTotalStock,
-} from "./utils/helper";
-import { DEFAULT_DATA, SIDEBAR_ITEMS } from "./utils/constants";
-
-// External Components (these would be in their own files)
+// External Components
 import ProductForm from "./ProductForm";
 import OrderManagementPage from "./OrderManagementPage";
 import CouponManagement from "./CouponManagement";
@@ -36,6 +31,10 @@ import CustomerManagement from "./CustomerManagement";
 import InventoryManagement from "./InventoryManagement";
 import ReviewsManagement from "./ReviewsManagement";
 import ReportsAnalytics from "./ReportsAnalytics";
+
+// Utils
+import { formatCurrency, formatDate } from "./utils/helper";
+import { SIDEBAR_ITEMS } from "./utils/constants";
 
 // Dashboard Charts Component
 const DashboardCharts = ({ salesSeries, lowStock }) => {
@@ -84,14 +83,14 @@ const DashboardCharts = ({ salesSeries, lowStock }) => {
           {lowStock?.length ? (
             lowStock.slice(0, 5).map((product) => (
               <div
-                key={product.id}
+                key={product._id}
                 className="p-3 bg-red-50 rounded-lg border border-red-200"
               >
                 <div className="font-medium text-red-900 text-sm">
-                  {product.title}
+                  {product.name}
                 </div>
                 <div className="text-xs text-red-700 mt-1">
-                  Stock: {calculateTotalStock(product.stock)}
+                  Stock: {product.countInStock}
                 </div>
               </div>
             ))
@@ -118,7 +117,6 @@ const DashboardCharts = ({ salesSeries, lowStock }) => {
 const ProductsView = ({
   filteredProducts,
   query,
-  data,
   onAddProduct,
   onEditProduct,
   onToggleProduct,
@@ -132,7 +130,7 @@ const ProductsView = ({
             Product Management
           </h2>
           <p className="text-gray-600 mt-1">
-            {filteredProducts.length} of {data.products?.length || 0} products
+            {filteredProducts.length} products
             {query && ` matching "${query}"`}
           </p>
         </div>
@@ -167,11 +165,11 @@ const ProductsView = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProducts.map((product) => (
             <ProductCard
-              key={product.id}
+              key={product._id}
               product={product}
               onEdit={() => onEditProduct(product)}
-              onToggle={() => onToggleProduct(product.id)}
-              onDelete={() => onDeleteProduct(product.id)}
+              onToggle={() => onToggleProduct(product._id)}
+              onDelete={() => onDeleteProduct(product._id)}
             />
           ))}
         </div>
@@ -182,87 +180,119 @@ const ProductsView = ({
 
 // Main Admin Panel Component
 export default function AdminPanel() {
-  const [data, setData] = useStorage("admin_data_v1", DEFAULT_DATA);
+  const dispatch = useDispatch();
+  
+  // Redux State
+  const { orders, totalOrders, totalSale, loading: ordersLoading } = useSelector(state => state.adminOrders);
+  const { products, loading: productsLoading } = useSelector(state => state.adminProducts);
+  const { users, loading: usersLoading } = useSelector(state => state.admin);
+
   const [view, setView] = useState("dashboard");
-  const [themeDark, setThemeDark] = useStorage("admin_theme_dark", false);
+  const [themeDark, setThemeDark] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Simulate loading state
+  // Combined loading state
+  const loading = ordersLoading || productsLoading || usersLoading || isLoading;
+
+  // Fetch data based on current view
   useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => setIsLoading(false), 500);
-    return () => clearTimeout(timer);
-  }, [view]);
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        switch (view) {
+          case "dashboard":
+            await Promise.all([
+              dispatch(fetchAllOrders()),
+              dispatch(fetchAdminProducts()),
+              dispatch(fetchUsers())
+            ]);
+            break;
+          case "products":
+            await dispatch(fetchAdminProducts());
+            break;
+          case "orders":
+            await dispatch(fetchAllOrders());
+            break;
+          case "customers":
+            await dispatch(fetchUsers());
+            break;
+          default:
+            break;
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [view, dispatch]);
+
+  // Theme persistence
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("admin_theme_dark");
+    if (savedTheme) {
+      setThemeDark(JSON.parse(savedTheme));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("admin_theme_dark", JSON.stringify(themeDark));
+  }, [themeDark]);
 
   // Derived metrics with useMemo for performance
   const metrics = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
-    const orders = data.orders || [];
-    const products = data.products || [];
-    const customers = data.customers || [];
+    
+    const pendingOrders = orders?.filter((o) => o.status === "pending").length || 0;
+    const salesToday = orders?.filter((o) => 
+      new Date(o.createdAt).toISOString().slice(0, 10) === today
+    ).reduce((s, o) => s + (o.totalPrice || 0), 0) || 0;
 
-    const totalOrders = orders.length;
-    const pendingOrders = orders.filter((o) => o.status === "pending").length;
-    const revenue = orders.reduce((s, o) => s + (o.total || 0), 0);
-    const salesToday = orders
-      .filter((o) => o.date === today)
-      .reduce((s, o) => s + (o.total || 0), 0);
-
-    const lowStock = products.filter((p) => calculateTotalStock(p.stock) <= 5);
-
-    const activeProducts = products.filter((p) => p.enabled).length;
-    const totalCustomers = customers.length;
-    const activeCustomers = customers.filter(
-      (c) => c.status === "active"
-    ).length;
-    const newCustomersThisMonth = customers.filter((c) => {
-      const custDate = new Date(c.createdAt);
-      const now = new Date();
-      return (
-        custDate.getMonth() === now.getMonth() &&
-        custDate.getFullYear() === now.getFullYear()
-      );
-    }).length;
+    const lowStock = products?.filter((p) => p.countInStock <= 5) || [];
+    const activeProducts = products?.filter((p) => p.isPublished).length || 0;
 
     return {
-      totalOrders,
+      totalOrders: totalOrders || 0,
       pendingOrders,
-      revenue,
+      revenue: totalSale || 0,
       salesToday,
       lowStock,
       activeProducts,
-      totalProducts: products.length,
-      totalCustomers,
-      activeCustomers,
-      newCustomersThisMonth,
+      totalProducts: products?.length || 0,
+      totalCustomers: users?.length || 0,
+      activeCustomers: users?.filter(u => u.status === 'active').length || 0,
     };
-  }, [data]);
+  }, [orders, products, users, totalOrders, totalSale]);
 
   // Filtered products
   const filteredProducts = useMemo(() => {
-    if (!query.trim()) return data.products || [];
+    if (!query.trim()) return products || [];
 
     const searchTerm = query.toLowerCase();
-    return (data.products || []).filter(
+    return (products || []).filter(
       (p) =>
-        p.title?.toLowerCase().includes(searchTerm) ||
+        p.name?.toLowerCase().includes(searchTerm) ||
         p.category?.toLowerCase().includes(searchTerm) ||
         p.description?.toLowerCase().includes(searchTerm)
     );
-  }, [query, data.products]);
+  }, [query, products]);
 
   // Charts data
   const salesSeries = useMemo(() => {
-    const orders = data.orders || [];
     return Array.from({ length: 7 }).map((_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - (6 - i));
       const key = d.toISOString().slice(0, 10);
-      const total = orders
-        .filter((o) => o.date === key)
-        .reduce((s, o) => s + (o.total || 0), 0);
+      
+      const dayOrders = orders?.filter(order => 
+        new Date(order.createdAt).toISOString().slice(0, 10) === key
+      ) || [];
+      
+      const total = dayOrders.reduce((s, o) => s + (o.totalPrice || 0), 0);
 
       return {
         date: new Intl.DateTimeFormat("en-US", {
@@ -273,53 +303,42 @@ export default function AdminPanel() {
         total,
       };
     });
-  }, [data.orders]);
+  }, [orders]);
 
-  // Event handlers
- const handleProductSave = useCallback((vals) => {
-  if (selectedProduct.mode === "edit") {
-    setData((prev) => ({
-      ...prev,
-      products: (prev.products || []).map((p) =>
-        p.id === selectedProduct.product.id ? { ...p, ...vals } : p
-      ),
-    }));
-  } else {
-    setData((prev) => ({
-      ...prev,
-      products: [{ ...vals, id: uid(), enabled: true }, ...(prev.products || [])],
-    }));
-  }
-  setSelectedProduct(null);
-}, [selectedProduct, setData]);
-
-  const handleProductDelete = useCallback(
-    (productId) => {
-      if (window.confirm("Are you sure you want to delete this product?")) {
-        setData((prev) => ({
-          ...prev,
-          products: prev.products.filter((x) => x.id !== productId),
-        }));
-      }
-    },
-    [setData]
-  );
-
-  const handleProductToggle = useCallback(
-    (productId) => {
-      setData((prev) => ({
-        ...prev,
-        products: prev.products.map((x) =>
-          x.id === productId ? { ...x, enabled: !x.enabled } : x
-        ),
+  // Product handlers
+  const handleProductSave = useCallback((productData) => {
+    if (selectedProduct.mode === "edit") {
+      dispatch(updateProduct({ 
+        id: selectedProduct.product._id, 
+        productData 
       }));
-    },
-    [setData]
-  );
+    } else {
+      dispatch(createProduct(productData));
+    }
+    setSelectedProduct(null);
+  }, [selectedProduct, dispatch]);
+
+  const handleProductDelete = useCallback((productId) => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      dispatch(deleteProduct(productId));
+    }
+  }, [dispatch]);
+
+  const handleProductToggle = useCallback((productId) => {
+    const product = products.find(p => p._id === productId);
+    if (product) {
+      dispatch(updateProduct({
+        id: productId,
+        productData: { 
+          ...product, 
+          isPublished: !product.isPublished 
+        }
+      }));
+    }
+  }, [products, dispatch]);
 
   const handleAddProduct = () => setSelectedProduct({ mode: "create" });
-  const handleEditProduct = (product) =>
-    setSelectedProduct({ mode: "edit", product });
+  const handleEditProduct = (product) => setSelectedProduct({ mode: "edit", product });
 
   return (
     <div
@@ -369,7 +388,7 @@ export default function AdminPanel() {
           </div>
         </div>
 
-        {isLoading ? (
+        {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
@@ -422,7 +441,6 @@ export default function AdminPanel() {
               <ProductsView
                 filteredProducts={filteredProducts}
                 query={query}
-                data={data}
                 onAddProduct={handleAddProduct}
                 onEditProduct={handleEditProduct}
                 onToggleProduct={handleProductToggle}
@@ -453,6 +471,7 @@ export default function AdminPanel() {
                 : "Add New Product"
             }
             onClose={() => setSelectedProduct(null)}
+            size="lg"
           >
             <ProductForm
               initial={selectedProduct.product}

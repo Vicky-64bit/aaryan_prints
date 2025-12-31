@@ -4,13 +4,25 @@ const { protect, admin } = require("../middlewares/authMiddelware");
 
 const router = express.Router();
 
-//TODO
-// Add a duplicate SKU check
-// So two products don’t accidentally share the same SKU:
-// const existingProduct = await Product.findOne({ sku });
-// if (existingProduct) {
-//   return res.status(400).json({ message: "Product with this SKU already exists" });
-// }
+// @route GET /api/products/check-sku
+// @desc Check if SKU already exists
+// @access Private/Admin
+router.get("/check-sku", protect, admin, async (req, res) => {
+  try {
+    const { sku } = req.query;
+    
+    if (!sku) {
+      return res.status(400).json({ message: "SKU parameter is required" });
+    }
+
+    const existingProduct = await Product.findOne({ sku });
+    
+    res.json({ exists: !!existingProduct });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server Error");
+  }
+});
 
 // @route POST /api/products
 // @desc Create a new Product
@@ -39,6 +51,17 @@ router.post("/", protect, admin, async (req, res) => {
       sku,
     } = req.body;
 
+    // Check for duplicate SKU
+    const existingProduct = await Product.findOne({ sku });
+    if (existingProduct) {
+      return res.status(400).json({ message: "Product with this SKU already exists" });
+    }
+
+    // Validate required fields
+    if (!name || !description || !sku || !category) {
+      return res.status(400).json({ message: "Required fields are missing" });
+    }
+
     const product = new Product({
       name,
       description,
@@ -62,10 +85,13 @@ router.post("/", protect, admin, async (req, res) => {
       user: req.user._id, // Reference to the admin user who created it
     });
 
-    const createdPoduct = await product.save();
-    res.status(201).json(createdPoduct);
+    const createdProduct = await product.save();
+    res.status(201).json(createdProduct);
   } catch (error) {
-    console.log(error);
+    console.error(error);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message });
+    }
     res.status(500).send("Server Error");
   }
 });
@@ -101,6 +127,14 @@ router.put("/:id", protect, admin, async (req, res) => {
     const product = await Product.findById(req.params.id);
 
     if (product) {
+      // Check for duplicate SKU if SKU is being changed
+      if (sku && sku !== product.sku) {
+        const existingProduct = await Product.findOne({ sku });
+        if (existingProduct) {
+          return res.status(400).json({ message: "Product with this SKU already exists" });
+        }
+      }
+
       // Update product Fields
       product.name = name || product.name;
       product.description = description || product.description;
@@ -134,6 +168,9 @@ router.put("/:id", protect, admin, async (req, res) => {
     console.error(error);
     if (error.name === "CastError") {
       return res.status(400).json({ message: "Invalid product ID" });
+    }
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message });
     }
     res.status(500).send("Server Error");
   }
@@ -271,23 +308,7 @@ router.get("/new-arrivals", async (req, res)=>{
     };
 });
 
-// @route GET /api/products/:id
-// @desc Get a single product by ID
-// @access Public
-router.get("/:id", async(req, res)=>{
-    try{
-        const product = await Product.findById(req.params.id);
-        if(product) {
-            res.json(product);
-        } else {
-            res.status(404).json({message: "Product not found"});
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).send("Server Error");
-        
-    }
-});
+
 
 // @route GET /api/products/similar/:id
 // @desc Retrieve similar products based on the current product's gender an category
@@ -316,7 +337,64 @@ router.get("/similar/:id", async(req, res)=>{
 })
 
 
+// @route GET /api/products/frequently-bought-together
+// @desc Get products frequently bought together for a given product
+// @access Public
+router.get("/frequently-bought-together", async (req, res) => {
+  const { productId, limit } = req.query;
+
+  if (!productId) {
+    return res.status(400).json({ message: "Product ID is required" });
+  }
+
+  // Validate ObjectId
+  if (!mongoose.Types.ObjectId.isValid(productId)) {
+    return res.status(400).json({ message: "Invalid Product ID" });
+  }
+
+  try {
+    // Fetch the reference product
+    const baseProduct = await Product.findById(productId);
+    if (!baseProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Fetch related products (same category or brand, exclude base product)
+    const products = await Product.find({
+      _id: { $ne: baseProduct._id },
+      $or: [
+        { category: baseProduct.category },
+        { brand: baseProduct.brand },
+      ],
+    })
+      .limit(Number(limit) || 8)
+      .sort({ rating: -1 }); // Optional: sort by rating/popularity
+
+    res.json(products);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+// @route GET /api/products/:id
+// @desc Get a single product by ID
+// @access Public
+router.get("/:id", async(req, res)=>{
+    try{
+        const product = await Product.findById(req.params.id);
+        if(product) {
+            res.json(product);
+        } else {
+            res.status(404).json({message: "Product not found"});
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Server Error");
+        
+    }
+});
 
 module.exports = router;
-
-// token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7ImlkIjoiNjhkY2QyMTJlNDFkZTE2YTU0ZmI2NzZmIiwicm9sZSI6ImN1c3RvbWVyIn0sImlhdCI6MTc1OTg4MTgyNiwiZXhwIjoxNzU5OTUzODI2fQ.nv4WzF6GCZlqUpP0tkUHFRPTi2MZvLJRjaEsOxfo558

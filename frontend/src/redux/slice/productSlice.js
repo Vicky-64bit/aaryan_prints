@@ -1,8 +1,10 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-// Async thunk to fetch Products by Collection and optional Filters
-export const fetchProductsByFilters = createAsyncThunk(
+/* =========================================
+   FETCH PRODUCTS BY FILTERS
+========================================= */
+const fetchProductsByFilters = createAsyncThunk(
   "products/fetchByFilters",
   async ({
     collection,
@@ -39,8 +41,10 @@ export const fetchProductsByFilters = createAsyncThunk(
   }
 );
 
-// Async thunk to fetch a single product by ID
-export const fetchProductDetails = createAsyncThunk(
+/* =========================================
+   FETCH SINGLE PRODUCT
+========================================= */
+const fetchProductDetails = createAsyncThunk(
   "products/fetchProductDetails",
   async (id) => {
     const response = await axios.get(
@@ -50,8 +54,10 @@ export const fetchProductDetails = createAsyncThunk(
   }
 );
 
-// Async thunk to update product
-export const updateProduct = createAsyncThunk(
+/* =========================================
+   UPDATE PRODUCT
+========================================= */
+const updateProduct = createAsyncThunk(
   "products/updateProduct",
   async (id, productData) => {
     const response = await axios.put(
@@ -67,23 +73,84 @@ export const updateProduct = createAsyncThunk(
   }
 );
 
-//Async thunk to fetch similar products
-export const fetchSimilarProducts = createAsyncThunk(
+/* =========================================
+   FETCH SIMILAR PRODUCTS
+========================================= */
+const fetchSimilarProducts = createAsyncThunk(
   "products/fetchSimilarProducts",
-  async ({ id }) => {
+  async ({ id, limit = 8 }) => {
     const response = await axios.get(
-      `${import.meta.env.VITE_BACKEND_URL}/api/products/similar/${id}`
+      `${import.meta.env.VITE_BACKEND_URL}/api/products/similar/${id}?limit=${limit}`
     );
     return response.data;
   }
 );
 
+/* =========================================
+   FETCH NEW ARRIVALS
+========================================= */
+const fetchNewArrivalsProducts = createAsyncThunk(
+  "products/fetchNewArrivals",
+  async () => {
+    const response = await axios.get(
+      `${import.meta.env.VITE_BACKEND_URL}/api/products/new-arrivals`
+    );
+    return response.data;
+  }
+);
+
+/* =========================================
+   FETCH RECOMMENDED PRODUCTS
+========================================= */
+const fetchRecommendedProducts = createAsyncThunk(
+  "products/fetchRecommended",
+  async ({ limit = 8 } = {}) => {
+    const response = await axios.get(
+      `${import.meta.env.VITE_BACKEND_URL}/api/products?sortBy=popularity&limit=${limit}`
+    );
+    return response.data;
+  }
+);
+
+/* =========================================
+   FETCH BEST SELLER PRODUCT
+========================================= */
+const fetchBestSellerProduct = createAsyncThunk(
+  "products/fetchBestSeller",
+  async () => {
+    const response = await axios.get(
+      `${import.meta.env.VITE_BACKEND_URL}/api/products/best-seller`
+    );
+    return response.data;
+  }
+);
+
+/* =========================================
+   FETCH FREQUENTLY BOUGHT TOGETHER
+========================================= */
+const fetchFrequentlyBoughtTogetherProducts = createAsyncThunk(
+  "products/fetchFrequentlyBoughtTogether",
+  async ({ productId, limit = 8 }) => {
+    const response = await axios.get(
+      `${import.meta.env.VITE_BACKEND_URL}/api/products/frequently-bought-together?productId=${productId}&limit=${limit}`
+    );
+    return response.data;
+  }
+);
+
+/* =========================================
+   SLICE
+========================================= */
 const productSlice = createSlice({
   name: "products",
   initialState: {
     products: [],
-    selectedProduct: null, // Store the details of the single Product
+    newArrivals: [],
+    recommendedProducts: [],
+    bestSeller: null,
     similarProducts: [],
+    frequentlyBought: [],
+    selectedProduct: null,
     loading: false,
     error: null,
     filters: {
@@ -122,66 +189,65 @@ const productSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // handle fetching products with filter
-      .addCase(fetchProductsByFilters.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchProductsByFilters.fulfilled, (state, action) => {
-        state.loading = false;
-        state.products = Array.isArray(action.payload) ? action.payload : [];
-      })
-      .addCase(fetchProductsByFilters.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
-      })
-      // handle fetching single product details
-      .addCase(fetchProductDetails.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchProductDetails.fulfilled, (state, action) => {
-        state.loading = false;
-        state.selectedProduct = action.payload;
-      })
-      .addCase(fetchProductDetails.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
-      })
-      // Handle updating product
-      .addCase(updateProduct.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
+      /* FILTERED PRODUCTS */
+      .addCase(fetchProductsByFilters.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(fetchProductsByFilters.fulfilled, (state, action) => { state.loading = false; state.products = action.payload; })
+      .addCase(fetchProductsByFilters.rejected, (state, action) => { state.loading = false; state.error = action.error.message; })
+
+      /* PRODUCT DETAILS */
+      .addCase(fetchProductDetails.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(fetchProductDetails.fulfilled, (state, action) => { state.loading = false; state.selectedProduct = action.payload; })
+      .addCase(fetchProductDetails.rejected, (state, action) => { state.loading = false; state.error = action.error.message; })
+
+      /* UPDATE PRODUCT */
+      .addCase(updateProduct.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(updateProduct.fulfilled, (state, action) => {
         state.loading = false;
-        const updateProduct = action.payload;
-        const index = state.products.findIndex((product) => 
-          product._id === updateProduct._id
-        );
-        if (index !== -1) {
-          state.products[index] = updateProduct;
-        }
+        const updatedProduct = action.payload;
+        const index = state.products.findIndex((p) => p._id === updatedProduct._id);
+        if (index !== -1) state.products[index] = updatedProduct;
       })
-      .addCase(updateProduct.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
-      })
-      // handle fetching similar products
-      .addCase(fetchSimilarProducts.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchSimilarProducts.fulfilled, (state, action) => {
-        state.loading = false;
-        state.similarProducts = action.payload;
-      })
-      .addCase(fetchSimilarProducts.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
-      });
+      .addCase(updateProduct.rejected, (state, action) => { state.loading = false; state.error = action.error.message; })
+
+      /* SIMILAR PRODUCTS */
+      .addCase(fetchSimilarProducts.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(fetchSimilarProducts.fulfilled, (state, action) => { state.loading = false; state.similarProducts = action.payload; })
+      .addCase(fetchSimilarProducts.rejected, (state, action) => { state.loading = false; state.error = action.error.message; })
+
+      /* NEW ARRIVALS */
+      .addCase(fetchNewArrivalsProducts.pending, (state) => { state.loading = true; })
+      .addCase(fetchNewArrivalsProducts.fulfilled, (state, action) => { state.loading = false; state.newArrivals = action.payload; })
+      .addCase(fetchNewArrivalsProducts.rejected, (state, action) => { state.loading = false; state.error = action.error.message; })
+
+      /* RECOMMENDED */
+      .addCase(fetchRecommendedProducts.pending, (state) => { state.loading = true; })
+      .addCase(fetchRecommendedProducts.fulfilled, (state, action) => { state.loading = false; state.recommendedProducts = action.payload; })
+      .addCase(fetchRecommendedProducts.rejected, (state, action) => { state.loading = false; state.error = action.error.message; })
+
+      /* BEST SELLER */
+      .addCase(fetchBestSellerProduct.pending, (state) => { state.loading = true; })
+      .addCase(fetchBestSellerProduct.fulfilled, (state, action) => { state.loading = false; state.bestSeller = action.payload; })
+      .addCase(fetchBestSellerProduct.rejected, (state, action) => { state.loading = false; state.error = action.error.message; })
+
+      /* FREQUENTLY BOUGHT */
+      .addCase(fetchFrequentlyBoughtTogetherProducts.pending, (state) => { state.loading = true; })
+      .addCase(fetchFrequentlyBoughtTogetherProducts.fulfilled, (state, action) => { state.loading = false; state.frequentlyBought = action.payload; })
+      .addCase(fetchFrequentlyBoughtTogetherProducts.rejected, (state, action) => { state.loading = false; state.error = action.error.message; });
   },
 });
 
 export const { setFilters, clearFilters } = productSlice.actions;
+
+// ✅ EXPORT ALL THUNKS
+export {
+  fetchProductsByFilters,
+  fetchProductDetails,
+  updateProduct,
+  fetchSimilarProducts,
+  fetchNewArrivalsProducts,
+  fetchRecommendedProducts,
+  fetchBestSellerProduct,
+  fetchFrequentlyBoughtTogetherProducts,
+};
+
 export default productSlice.reducer;

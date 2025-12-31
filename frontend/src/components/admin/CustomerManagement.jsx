@@ -1,36 +1,93 @@
-import React, { useState, useMemo } from 'react';
-import { useStorage } from './hooks/useStorage';
-import { DEFAULT_DATA } from './utils/constants';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import Card from './Card';
 import Button from './Button';
 import Modal from './Modal';
 
+// Redux Actions
+import { fetchUsers, addUser, updateUser, deleteUser } from '../../redux/slice/adminSlice';
+import { fetchAllOrders } from '../../redux/slice/adminOrderSlice';
+
 const CustomerManagement = () => {
-  const [data, setData] = useStorage("admin_data_v1", DEFAULT_DATA);
+  const dispatch = useDispatch();
+  
+  // Redux State
+  const { users, loading: usersLoading } = useSelector(state => state.admin);
+  const { orders, loading: ordersLoading } = useSelector(state => state.adminOrders);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  const customers = data.customers || [];
-  const orders = data.orders || [];
+  // Fetch data on component mount
+  useEffect(() => {
+    let isMounted = true;
 
-  // Calculate customer stats
+    const loadData = async () => {
+      try {
+        await Promise.all([
+          dispatch(fetchUsers()),
+          dispatch(fetchAllOrders())
+        ]);
+        
+        if (isMounted) {
+          setDataLoaded(true);
+        }
+      } catch (error) {
+        console.error('Error loading customer data:', error);
+        if (isMounted) {
+          setDataLoaded(true);
+        }
+      }
+    };
+
+    if (!dataLoaded && users.length === 0) {
+      loadData();
+    } else {
+      setDataLoaded(true);
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [dispatch, dataLoaded, users.length]);
+
+  // Calculate customer stats based on actual order structure
   const customersWithStats = useMemo(() => {
-    return customers.map(customer => {
-      const customerOrders = orders.filter(order => order.customerId === customer.id);
-      const totalSpent = customerOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+    if (!users.length) return [];
+    
+    return users.map(customer => {
+      // Find orders for this customer using user._id
+      const customerOrders = orders.filter(order => order.user._id === customer._id);
+      const totalSpent = customerOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
       const orderCount = customerOrders.length;
-      const lastOrder = customerOrders.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+      
+      // Get the most recent order
+      const lastOrder = customerOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+      
+      // Calculate average order value
+      const averageOrderValue = orderCount > 0 ? totalSpent / orderCount : 0;
 
       return {
         ...customer,
         totalSpent,
         orderCount,
-        lastOrder: lastOrder?.date || 'No orders',
-        customerSince: customer.createdAt || 'Unknown'
+        averageOrderValue,
+        lastOrder: lastOrder ? {
+          date: new Date(lastOrder.createdAt).toISOString().slice(0, 10),
+          amount: lastOrder.totalPrice,
+          status: lastOrder.status
+        } : null,
+        customerSince: customer.createdAt ? new Date(customer.createdAt).toISOString().slice(0, 10) : 'Unknown',
+        // Add address information if available
+        address: customer.address || '',
+        city: customer.city || '',
+        state: customer.state || '',
+        pincode: customer.pincode || customer.postalCode || ''
       };
     });
-  }, [customers, orders]);
+  }, [users, orders]);
 
   // Filter customers based on search
   const filteredCustomers = useMemo(() => {
@@ -42,7 +99,9 @@ const CustomerManagement = () => {
       customer.lastName?.toLowerCase().includes(query) ||
       customer.email?.toLowerCase().includes(query) ||
       customer.mobile?.includes(query) ||
-      customer.id?.toString().includes(query)
+      customer._id?.toString().includes(query) ||
+      customer.address?.toLowerCase().includes(query) ||
+      customer.city?.toLowerCase().includes(query)
     );
   }, [customersWithStats, searchQuery]);
 
@@ -61,24 +120,11 @@ const CustomerManagement = () => {
   // Save customer
   const handleSaveCustomer = (customerData) => {
     if (selectedCustomer.mode === "create") {
-      const newCustomer = {
-        ...customerData,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString().slice(0, 10),
-        role: 'customer',
-        status: 'active'
-      };
-      
-      setData(prev => ({
-        ...prev,
-        customers: [...(prev.customers || []), newCustomer]
-      }));
+      dispatch(addUser(customerData));
     } else {
-      setData(prev => ({
-        ...prev,
-        customers: prev.customers.map(c =>
-          c.id === selectedCustomer.customer.id ? { ...c, ...customerData } : c
-        )
+      dispatch(updateUser({
+        id: selectedCustomer.customer._id,
+        ...customerData
       }));
     }
     setShowCustomerModal(false);
@@ -87,21 +133,19 @@ const CustomerManagement = () => {
 
   // Toggle customer status
   const handleToggleStatus = (customerId) => {
-    setData(prev => ({
-      ...prev,
-      customers: prev.customers.map(c =>
-        c.id === customerId ? { ...c, status: c.status === 'active' ? 'inactive' : 'active' } : c
-      )
-    }));
+    const customer = users.find(c => c._id === customerId);
+    if (customer) {
+      dispatch(updateUser({
+        id: customerId,
+        status: customer.status === 'active' ? 'inactive' : 'active'
+      }));
+    }
   };
 
   // Delete customer
   const handleDeleteCustomer = (customerId) => {
     if (window.confirm("Are you sure you want to delete this customer? This action cannot be undone.")) {
-      setData(prev => ({
-        ...prev,
-        customers: prev.customers.filter(c => c.id !== customerId)
-      }));
+      dispatch(deleteUser(customerId));
     }
   };
 
@@ -111,6 +155,25 @@ const CustomerManagement = () => {
     setShowCustomerModal(true);
   };
 
+  const loading = !dataLoaded && (usersLoading || ordersLoading) && users.length === 0;
+
+  // Calculate overall statistics
+  const overallStats = useMemo(() => {
+    const totalCustomers = users.length;
+    const activeCustomers = users.filter(c => c.status === 'active').length;
+    const totalRevenue = customersWithStats.reduce((sum, customer) => sum + customer.totalSpent, 0);
+    const totalOrders = customersWithStats.reduce((sum, customer) => sum + customer.orderCount, 0);
+    const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    return {
+      totalCustomers,
+      activeCustomers,
+      totalRevenue,
+      totalOrders,
+      avgOrderValue
+    };
+  }, [users, customersWithStats]);
+
   return (
     <section className="space-y-6">
       {/* Header */}
@@ -118,7 +181,7 @@ const CustomerManagement = () => {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Customer Management</h2>
           <p className="text-gray-600 mt-1">
-            {filteredCustomers.length} of {customers.length} customers
+            {filteredCustomers.length} of {users.length} customers
             {searchQuery && ` matching "${searchQuery}"`}
           </p>
         </div>
@@ -132,48 +195,77 @@ const CustomerManagement = () => {
         </Button>
       </div>
 
+      {/* Overall Statistics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="p-4 text-center">
+          <div className="text-2xl font-bold text-blue-600">{overallStats.totalCustomers}</div>
+          <div className="text-sm text-gray-600">Total Customers</div>
+        </Card>
+        <Card className="p-4 text-center">
+          <div className="text-2xl font-bold text-green-600">{overallStats.activeCustomers}</div>
+          <div className="text-sm text-gray-600">Active Customers</div>
+        </Card>
+        <Card className="p-4 text-center">
+          <div className="text-2xl font-bold text-purple-600">{overallStats.totalOrders}</div>
+          <div className="text-sm text-gray-600">Total Orders</div>
+        </Card>
+        <Card className="p-4 text-center">
+          <div className="text-2xl font-bold text-orange-600">₹{overallStats.totalRevenue}</div>
+          <div className="text-sm text-gray-600">Total Revenue</div>
+        </Card>
+      </div>
+
       {/* Search */}
       <div className="bg-white p-4 rounded-lg shadow-sm">
         <input
           type="text"
-          placeholder="Search customers by name, email, mobile, or ID..."
+          placeholder="Search customers by name, email, mobile, address, or city..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
       </div>
 
-      {/* Customers Grid */}
-      {filteredCustomers.length === 0 ? (
-        <Card className="text-center py-12">
-          <div className="text-4xl mb-4">👥</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            {searchQuery ? "No customers found" : "No customers yet"}
-          </h3>
-          <p className="text-gray-600 mb-4">
-            {searchQuery
-              ? "Try adjusting your search terms"
-              : "Get started by adding your first customer"}
-          </p>
-          {!searchQuery && (
-            <Button variant="success" onClick={handleAddCustomer}>
-              Add Your First Customer
-            </Button>
-          )}
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCustomers.map((customer) => (
-            <CustomerCard
-              key={customer.id}
-              customer={customer}
-              onEdit={() => handleEditCustomer(customer)}
-              onViewDetails={() => handleViewDetails(customer)}
-              onToggleStatus={() => handleToggleStatus(customer.id)}
-              onDelete={() => handleDeleteCustomer(customer.id)}
-            />
-          ))}
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Loading customers...</span>
         </div>
+      ) : (
+        <>
+          {/* Customers Grid */}
+          {filteredCustomers.length === 0 ? (
+            <Card className="text-center py-12">
+              <div className="text-4xl mb-4">👥</div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {searchQuery ? "No customers found" : "No customers yet"}
+              </h3>
+              <p className="text-gray-600 mb-4">
+                {searchQuery
+                  ? "Try adjusting your search terms"
+                  : "Get started by adding your first customer"}
+              </p>
+              {!searchQuery && (
+                <Button variant="success" onClick={handleAddCustomer}>
+                  Add Your First Customer
+                </Button>
+              )}
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredCustomers.map((customer) => (
+                <CustomerCard
+                  key={customer._id}
+                  customer={customer}
+                  onEdit={() => handleEditCustomer(customer)}
+                  onViewDetails={() => handleViewDetails(customer)}
+                  onToggleStatus={() => handleToggleStatus(customer._id)}
+                  onDelete={() => handleDeleteCustomer(customer._id)}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* Customer Modal */}
@@ -254,25 +346,47 @@ const CustomerCard = ({ customer, onEdit, onViewDetails, onToggleStatus, onDelet
           )}
           <div className="flex items-center gap-2">
             <span>🆔</span>
-            <span>ID: {customer.id}</span>
+            <span>ID: {customer._id?.slice(-6)}</span>
           </div>
           <div className="flex items-center gap-2">
             <span>📅</span>
             <span>Since: {customer.customerSince}</span>
           </div>
+          {customer.city && (
+            <div className="flex items-center gap-2">
+              <span>📍</span>
+              <span>{customer.city}, {customer.state}</span>
+            </div>
+          )}
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-4 mb-4 p-3 bg-gray-50 rounded-lg">
+        <div className="grid grid-cols-3 gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
           <div className="text-center">
             <div className="text-lg font-bold text-gray-900">{customer.orderCount}</div>
             <div className="text-xs text-gray-600">Orders</div>
           </div>
           <div className="text-center">
             <div className="text-lg font-bold text-gray-900">₹{customer.totalSpent}</div>
-            <div className="text-xs text-gray-600">Total Spent</div>
+            <div className="text-xs text-gray-600">Spent</div>
+          </div>
+          <div className="text-center">
+            <div className="text-lg font-bold text-gray-900">
+              {customer.orderCount > 0 ? `₹${Math.round(customer.averageOrderValue)}` : '0'}
+            </div>
+            <div className="text-xs text-gray-600">Avg Order</div>
           </div>
         </div>
+
+        {/* Last Order Info */}
+        {customer.lastOrder && (
+          <div className="mb-4 p-2 bg-blue-50 rounded border border-blue-200">
+            <div className="text-xs text-blue-800">
+              <div className="font-medium">Last Order: {customer.lastOrder.date}</div>
+              <div>Amount: ₹{customer.lastOrder.amount} • Status: {customer.lastOrder.status}</div>
+            </div>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex gap-2 flex-wrap">
@@ -320,10 +434,11 @@ const CustomerForm = ({ customer, mode, onSave, onCancel }) => {
     password: customer?.password || '',
     gender: customer?.gender || 'Male',
     role: customer?.role || 'customer',
-    address: customer?.address || '',
-    city: customer?.city || '',
-    state: customer?.state || '',
-    pincode: customer?.pincode || '',
+    address: customer?.address || customer?.shippingAddress?.address || '',
+    city: customer?.city || customer?.shippingAddress?.city || '',
+    state: customer?.state || customer?.shippingAddress?.state || '',
+    pincode: customer?.pincode || customer?.postalCode || customer?.shippingAddress?.postalCode || '',
+    country: customer?.country || customer?.shippingAddress?.country || 'India',
     notes: customer?.notes || ''
   });
 
@@ -570,6 +685,19 @@ const CustomerForm = ({ customer, mode, onSave, onCancel }) => {
             type="text"
             value={formData.pincode}
             onChange={(e) => handleChange('pincode', e.target.value)}
+            disabled={isViewMode}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Country
+          </label>
+          <input
+            type="text"
+            value={formData.country}
+            onChange={(e) => handleChange('country', e.target.value)}
             disabled={isViewMode}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
           />

@@ -26,7 +26,7 @@ const Footer = () => {
 
   return (
     // Applied a subtle shadow for better definition against the background
-    <footer className="w-[95%] mx-auto bg-gradient-to-r from-indigo-50 via-white to-pink-50 rounded-3xl p-8 shadow-xl relative overflow-hidden">
+    <footer className="w-[95%] mx-auto mt-4 bg-gradient-to-r from-indigo-50 via-white to-pink-50 rounded-3xl p-8 shadow-xl relative overflow-hidden">
       
       {/* Main Grid Container */}
       <div className="container mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 px-4 lg:px-0">
@@ -178,7 +178,7 @@ const Footer = () => {
       {/* Back to Top Button - Added a subtle pulse animation for visibility */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        className="fixed bottom-6 right-6 bg-indigo-500 text-white p-3 rounded-full shadow-xl hover:bg-indigo-700 hover:scale-110 transition-all z-50 animate-pulse-slow"
+        className="fixed bottom-6 right-6 cursor-pointer bg-indigo-500 text-white p-3 rounded-full shadow-xl hover:bg-indigo-700 hover:scale-110 transition-all z-50 animate-pulse-slow"
         aria-label="Back to top"
       >
         <span className="text-xl font-bold">↑</span>
