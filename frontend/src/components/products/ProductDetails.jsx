@@ -12,7 +12,6 @@ const ProductDetails = ({ productId }) => {
   const navigate = useNavigate();
   const { selectedProduct, loading, error, similarProducts } = useSelector((state) => state.products);
   const { user, guestId } = useSelector((state) => state.auth);
-
   const [mainImage, setMainImage] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
@@ -242,6 +241,17 @@ const ProductDetails = ({ productId }) => {
               >
                 ADD TO CART
               </button>
+
+             
+
+              {/* {selectedProduct.flipkartUrl && ( */}
+                  <button
+                    onClick={() => window.open(selectedProduct.flipkartUrl, "_blank")}
+                    className="flex-1 py-3 px-6 rounded-md font-bold text-lg bg-blue-600 text-white hover:bg-blue-700 transition"
+                  >
+                    BUY ON FLIPKART
+                  </button>
+              {/* )} */}
             </div>
 
             {/* Product Characteristics */}

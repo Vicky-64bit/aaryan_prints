@@ -28,7 +28,7 @@ export const createProduct = createAsyncThunk(
   async (productData, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${API_URL}/api/admin/products`,
+        `${API_URL}/api/products`,
         productData,
         {
           headers: {
@@ -51,7 +51,7 @@ export const updateProduct = createAsyncThunk(
   async ({ id, productData }, { rejectWithValue }) => {
     try {
       const response = await axios.put(
-        `${API_URL}/api/admin/products/${id}`,
+        `${API_URL}/api/products/${id}`,
         productData,
         {
           headers: {

@@ -25,7 +25,9 @@ import { logout } from "../redux/slice/authSlice";
 // Customer Care content
 const CustomerCareContent = () => (
   <div className="bg-white p-6 rounded-2xl shadow-sm">
-    <h3 className="text-lg sm:text-xl font-medium mb-4 italic">Customer Care</h3>
+    <h3 className="text-lg sm:text-xl font-medium mb-4 italic">
+      Customer Care
+    </h3>
     <p className="text-gray-500 mb-2">
       How can we help you today? Please find our contact details below:
     </p>
@@ -41,52 +43,74 @@ const CustomerCareContent = () => (
 );
 
 const Profile = () => {
-
-  const {user} = useSelector((state)=> state.auth);
+  const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  useEffect(()=>{
-    if(!user) {
+  useEffect(() => {
+    if (!user) {
       navigate("/login");
     }
   }, [user, navigate]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 640) {
+        setSidebarOpen(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const handleLogout = () => {
+    const confirmLogout = window.confirm("Are you sure you want to logout?");
+    if (!confirmLogout) return;
+
     dispatch(logout());
     dispatch(clearCart());
     navigate("/login");
-
   };
-
-
-
 
   const [activeLink, setActiveLink] = useState("My Profile");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const contentMap = {
-    "My Profile": <MyProfileContent />,
+    "My Profile": (
+      <MyProfileContent
+        onEditProfile={() => setActiveLink("Account & Information")}
+      />
+    ),
+
     "My Orders": <MyOrders />,
-    Wishlist: <Wishlist />,
-    Addresses: <Addresses />,
+    // Wishlist: <Wishlist />,
+    // Addresses: <Addresses />,
     "Account & Information": <AccountAndInformation />,
     "Customer Care": <CustomerCareContent />,
   };
 
   const navItems = [
     { name: "My Orders", icon: <BiListOl className="text-lg" /> },
-    { name: "Wishlist", icon: <BiHeart className="text-lg" /> },
-    { name: "Account & Information", icon: <BiInfoCircle className="text-lg" /> },
-    { name: "Addresses", icon: <BiMap className="text-lg" /> },
-    { name: "Saved Cards", icon: <BiCreditCard className="text-lg" /> },
+    // { name: "Wishlist", icon: <BiHeart className="text-lg" /> },
+    {
+      name: "Account & Information",
+      icon: <BiInfoCircle className="text-lg" />,
+    },
+    // { name: "Addresses", icon: <BiMap className="text-lg" /> },
+    // { name: "Saved Cards", icon: <BiCreditCard className="text-lg" /> },
     { name: "Customer Care", icon: <BiSupport className="text-lg" /> },
   ];
 
-  
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="text-gray-500">Loading profile...</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-gray-100 mt-24 mb-4 min-h-screen p-4 sm:p-6 md:p-8 font-sans">
+    <div className="bg-gray-100 mt-20 mb-4 min-h-screen p-4 sm:p-6 md:p-8 font-sans">
       <div className="max-w-7xl mx-auto bg-white rounded-3xl shadow-lg overflow-hidden">
         {/* Header */}
         <div className="flex items-center p-4 sm:p-6 border-b border-gray-200">
@@ -134,7 +158,10 @@ const Profile = () => {
           >
             <div className="flex justify-between items-center p-4 border-b sm:hidden">
               <h2 className="font-semibold text-gray-700">Menu</h2>
-              <button onClick={() => setSidebarOpen(false)} className="text-2xl">
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="text-2xl"
+              >
                 <BiX />
               </button>
             </div>
@@ -183,7 +210,9 @@ const Profile = () => {
 
           {/* Main Panel */}
           <main className="flex-1 p-4 sm:p-6 md:p-8 bg-gray-50 z-0">
-            {contentMap[activeLink] || <div>Page not found.</div>}
+            {contentMap[activeLink] || (
+              <div className="text-gray-500">Page not found.</div>
+            )}
           </main>
         </div>
       </div>

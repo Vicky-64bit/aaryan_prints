@@ -2,8 +2,9 @@
 import React from "react";
 import { useSelector } from "react-redux";
 
-const MyProfileContent = () => {
+const MyProfileContent = ({ onEditProfile }) => {
   const { user } = useSelector((state) => state.auth);
+  
 
   if (!user) {
     return (
@@ -13,13 +14,13 @@ const MyProfileContent = () => {
     );
   }
 
-
-
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm">
-      <h3 className="text-lg sm:text-xl font-medium mb-4 italic">Profile Details</h3>
+      <h3 className="text-lg sm:text-xl font-medium mb-6 italic">
+        Profile Details
+      </h3>
 
-      <div className="flex flex-col sm:flex-row items-center sm:items-start space-x-0 sm:space-x-4 mb-6">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-6">
         {/* Avatar */}
         <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
           <svg
@@ -37,27 +38,34 @@ const MyProfileContent = () => {
         </div>
 
         {/* User Details */}
-        <div className="grid grid-cols-2 gap-x-6 sm:gap-x-12 gap-y-4 text-sm mt-4 sm:mt-0 text-center sm:text-left">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-4 text-sm text-center sm:text-left">
           <div>
             <p className="text-gray-500">Name</p>
-            <p className="font-medium">{user?.firstName || "N/A"}</p>
+            <p className="font-medium">{user.firstName || "N/A"}</p>
           </div>
+
           <div>
             <p className="text-gray-500">Gender</p>
-            <p className="font-medium">{user?.gender || "N/A"}</p>
+            <p className="font-medium">{user.gender || "N/A"}</p>
           </div>
+
           <div>
             <p className="text-gray-500">Email Address</p>
-            <p className="font-medium">{user?.email || "N/A"}</p>
+            <p className="font-medium">{user.email || "N/A"}</p>
           </div>
+
           <div>
             <p className="text-gray-500">Mobile Number</p>
-            <p className="font-medium">{user?.mobile || "N/A"}</p>
+            <p className="font-medium">{user.mobile || "N/A"}</p>
           </div>
         </div>
       </div>
 
-      <button className="px-6 py-2 bg-orange-500 text-white font-medium rounded-full shadow hover:bg-orange-600 transition-colors">
+      {/* Edit Profile Button */}
+      <button
+        onClick={onEditProfile}
+        className="px-6 py-2 bg-orange-500 text-white font-medium rounded-full shadow hover:bg-orange-600 transition-colors"
+      >
         Edit Profile
       </button>
     </div>

@@ -49,6 +49,7 @@ router.post("/", protect, admin, async (req, res) => {
       dimensions,
       weight,
       sku,
+      flipkartUrl, 
     } = req.body;
 
     // Check for duplicate SKU
@@ -61,6 +62,7 @@ router.post("/", protect, admin, async (req, res) => {
     if (!name || !description || !sku || !category) {
       return res.status(400).json({ message: "Required fields are missing" });
     }
+    
 
     const product = new Product({
       name,
@@ -70,8 +72,8 @@ router.post("/", protect, admin, async (req, res) => {
       countInStock,
       category,
       brand,
-      sizes,
-      colors,
+      sizes: Array.isArray(sizes) ? sizes : sizes?.split(","),
+      colors: Array.isArray(colors) ? colors : colors?.split(","),
       collections,
       material,
       gender,
@@ -82,6 +84,7 @@ router.post("/", protect, admin, async (req, res) => {
       dimensions,
       weight,
       sku,
+      flipkartUrl,
       user: req.user._id, // Reference to the admin user who created it
     });
 
@@ -326,6 +329,7 @@ router.get("/similar/:id", async(req, res)=>{
             _id: { $ne: id}, // Exclude the current product ID
             gender: product.gender,
             category: product.category,
+            
         }).limit(12);
 
         res.json(similarProducts);

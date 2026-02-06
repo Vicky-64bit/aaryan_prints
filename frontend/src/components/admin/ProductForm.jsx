@@ -24,154 +24,160 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
     metaDescription: initial.metaDescription || "",
     metaKeywords: initial.metaKeywords || "",
     dimensions: initial.dimensions || { length: 0, width: 0, height: 0 },
-    weight: initial.weight || 0
+    weight: initial.weight || 0,
+    flipkartUrl: initial.flipkartUrl || "",
   });
 
   const [sizesText, setSizesText] = useState((initial.sizes || []).join(","));
-  const [colorsText, setColorsText] = useState((initial.colors || []).join(","));
+  const [colorsText, setColorsText] = useState(
+    (initial.colors || []).join(",")
+  );
   const [tagsText, setTagsText] = useState((initial.tags || []).join(","));
   const [imagesText, setImagesText] = useState(
-    (initial.images || []).map(img => img.url).join(",")
+    (initial.images || []).map((img) => img.url).join(",")
   );
 
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
-  const [skuError, setSkuError] = useState('');
+  const [skuError, setSkuError] = useState("");
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
 
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
 
     // Check SKU uniqueness when SKU field changes
-    if (field === 'sku') {
-      checkSku(value);
-    }
+    // if (field === "sku") {
+    //   checkSku(value);
+    // }
   };
 
   const handleDimensionChange = (dimension, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       dimensions: {
         ...prev.dimensions,
-        [dimension]: Number(value) || 0
-      }
+        [dimension]: Number(value) || 0,
+      },
     }));
   };
 
-  const checkSku = async (sku) => {
-    if (!sku) {
-      setSkuError('');
-      return;
-    }
-    
-    try {
-      const response = await fetch(`${API_URL}/api/products/check-sku?sku=${encodeURIComponent(sku)}`);
-      const data = await response.json();
-      
-      if (data.exists && (!initial.sku || initial.sku !== sku)) {
-        setSkuError('SKU already exists');
-      } else {
-        setSkuError('');
-      }
-    } catch (error) {
-      console.error('SKU check failed:', error);
-    }
-  };
+  // const checkSku = async (sku) => {
+  //   if (!sku) {
+  //     setSkuError("");
+  //     return;
+  //   }
+
+  //   try {
+  //     const response = await fetch(
+  //       `${API_URL}/api/products/check-sku?sku=${encodeURIComponent(sku)}`
+  //     );
+  //     const data = await response.json();
+
+  //     if (data.exists && (!initial.sku || initial.sku !== sku)) {
+  //       setSkuError("SKU already exists");
+  //     } else {
+  //       setSkuError("");
+  //     }
+  //   } catch (error) {
+  //     console.error("SKU check failed:", error);
+  //   }
+  // };
 
   const handleImageUpload = async (file) => {
-  setUploading(true);
-  try {
-    // const userInfo = JSON.parse(localStorage.getItem("usertoken"));
-    const token =  localStorage.getItem("usertoken");
+    setUploading(true);
+    try {
+      // const userInfo = JSON.parse(localStorage.getItem("usertoken"));
+      const token = localStorage.getItem("usertoken");
 
-    if (!token) {
-      alert("User not authenticated. Please log in again.");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("image", file);
-
-    const response = await fetch(`${API_URL}/api/upload`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
-
-    const contentType = response.headers.get("content-type");
-    let data;
-    if (contentType && contentType.includes("application/json")) {
-      data = await response.json();
-    } else {
-      const text = await response.text();
-      data = { imageUrl: text };
-    }
-
-    if (data.imageUrl) {
-      const newImagesText = imagesText
-        ? `${imagesText},${data.imageUrl}`
-        : data.imageUrl;
-      setImagesText(newImagesText);
-      if (errors.images) {
-        setErrors((prev) => ({ ...prev, images: "" }));
+      if (!token) {
+        alert("User not authenticated. Please log in again.");
+        return;
       }
-    } else {
-      console.error("Unexpected upload response:", data);
-      alert("Image upload failed. Please try again.");
-    }
-  } catch (error) {
-    console.error("Upload failed:", error);
-    alert("Image upload failed. Please check your connection and try again.");
-  } finally {
-    setUploading(false);
-  }
-};
 
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetch(`${API_URL}/api/upload`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const contentType = response.headers.get("content-type");
+      let data;
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        data = { imageUrl: text };
+      }
+
+      if (data.imageUrl) {
+        const newImagesText = imagesText
+          ? `${imagesText},${data.imageUrl}`
+          : data.imageUrl;
+        setImagesText(newImagesText);
+        if (errors.images) {
+          setErrors((prev) => ({ ...prev, images: "" }));
+        }
+      } else {
+        console.error("Unexpected upload response:", data);
+        alert("Image upload failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Upload failed:", error);
+      alert("Image upload failed. Please check your connection and try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       // Validate file type
-      if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
+      if (!file.type.startsWith("image/")) {
+        alert("Please select an image file");
         return;
       }
-      
+
       // Validate file size (5MB max)
       if (file.size > 5 * 1024 * 1024) {
-        alert('Image size should be less than 5MB');
+        alert("Image size should be less than 5MB");
         return;
       }
-      
+
       handleImageUpload(file);
     }
     // Reset file input
-    e.target.value = '';
+    e.target.value = "";
   };
 
   const validateForm = () => {
     const newErrors = {};
-    
-    if (!formData.name.trim()) newErrors.name = 'Product name is required';
-    if (!formData.sku.trim()) newErrors.sku = 'SKU is required';
-    if (!formData.description.trim()) newErrors.description = 'Description is required';
-    if (formData.price <= 0) newErrors.price = 'Price must be greater than 0';
-    if (formData.countInStock < 0) newErrors.countInStock = 'Stock cannot be negative';
-    if (!sizesText.trim()) newErrors.sizes = 'At least one size is required';
-    if (!colorsText.trim()) newErrors.colors = 'At least one color is required';
-    if (!imagesText.trim()) newErrors.images = 'At least one image is required';
+
+    if (!formData.name.trim()) newErrors.name = "Product name is required";
+    if (!formData.sku.trim()) newErrors.sku = "SKU is required";
+    if (!formData.description.trim())
+      newErrors.description = "Description is required";
+    if (formData.price <= 0) newErrors.price = "Price must be greater than 0";
+    if (formData.countInStock < 0)
+      newErrors.countInStock = "Stock cannot be negative";
+    if (!sizesText.trim()) newErrors.sizes = "At least one size is required";
+    if (!colorsText.trim()) newErrors.colors = "At least one color is required";
+    if (!imagesText.trim()) newErrors.images = "At least one image is required";
     if (skuError) newErrors.sku = skuError;
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -182,26 +188,36 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
       const firstErrorField = Object.keys(errors)[0];
       const element = document.querySelector(`[name="${firstErrorField}"]`);
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
         element.focus();
       }
       return;
     }
-    
+
     setSaving(true);
     try {
       // Process arrays from text inputs
-      const sizes = sizesText.split(",").map(s => s.trim()).filter(Boolean);
-      const colors = colorsText.split(",").map(c => c.trim()).filter(Boolean);
-      const tags = tagsText.split(",").map(t => t.trim()).filter(Boolean);
-      
+      const sizes = sizesText
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const colors = colorsText
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean);
+      const tags = tagsText
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+
       // Process images - convert URLs to image objects
-      const images = imagesText.split(",")
-        .map(url => url.trim())
+      const images = imagesText
+        .split(",")
+        .map((url) => url.trim())
         .filter(Boolean)
-        .map(url => ({
+        .map((url) => ({
           url,
-          altText: formData.name || "Product image"
+          altText: formData.name || "Product image",
         }));
 
       const productData = {
@@ -217,8 +233,9 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
         dimensions: {
           length: Number(formData.dimensions.length) || 0,
           width: Number(formData.dimensions.width) || 0,
-          height: Number(formData.dimensions.height) || 0
+          height: Number(formData.dimensions.height) || 0,
         },
+        flipkartUrl:String(formData.flipkartUrl) || null,
         // Ensure these are booleans
         isFeatured: Boolean(formData.isFeatured),
         isPublished: Boolean(formData.isPublished),
@@ -226,33 +243,58 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
         rating: formData.rating || 0,
         numReviews: formData.numReviews || 0,
         // Add enabled field for compatibility
-        enabled: formData.enabled !== undefined ? formData.enabled : true
+        enabled: formData.enabled !== undefined ? formData.enabled : true,
       };
 
       await onSave(productData);
     } catch (error) {
-      console.error('Save failed:', error);
-      alert('Failed to save product. Please try again.');
+      console.error("Save failed:", error);
+      alert("Failed to save product. Please try again.");
     } finally {
       setSaving(false);
     }
   };
 
   const categories = [
-    "Clothing", "T-Shirts", "Shirts", "Pants", "Jeans", "Shorts", 
-    "Jackets", "Sweaters", "Dresses", "Skirts", "Activewear", 
-    "Accessories", "Shoes", "Bags", "Jewelry"
+    "Clothing",
+    "T-Shirts",
+    "Top Wear",
+    "Pants",
+    "Jeans",
+    "Shorts",
+    "Jackets",
+    "Sweaters",
+    "Dresses",
+    "Skirts",
+    "Activewear",
+    "Accessories",
+    "Shoes",
+    "Bags",
+    "Jewelry",
   ];
 
   const brands = [
-    "Aaryan Prints", "Nike", "Adidas", "Zara", "H&M", "Levi's",
-    "Puma", "Under Armour", "Tommy Hilfiger", "Calvin Klein"
+    "Aaryan Prints",
+    "Nike",
+    "Adidas",
+    "Zara",
+    "H&M",
+    "Levi's",
+    "Puma",
+    "Under Armour",
+    "Tommy Hilfiger",
+    "Calvin Klein",
   ];
 
   const collections = [
-    "Summer Collection", "Winter Collection", "Spring Collection", 
-    "Fall Collection", "New Arrivals", "Best Sellers", 
-    "Limited Edition", "Sale"
+    "Summer Collection",
+    "Winter Collection",
+    "Spring Collection",
+    "Fall Collection",
+    "New Arrivals",
+    "Best Sellers",
+    "Limited Edition",
+    "Sale",
   ];
 
   return (
@@ -263,7 +305,7 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
           <h3 className="md:col-span-2 text-lg font-semibold text-gray-900 mb-2">
             Basic Information
           </h3>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Product Name *
@@ -272,9 +314,9 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
               type="text"
               name="name"
               value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
+              onChange={(e) => handleInputChange("name", e.target.value)}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.name ? 'border-red-500' : 'border-gray-300'
+                errors.name ? "border-red-500" : "border-gray-300"
               }`}
               required
             />
@@ -291,9 +333,9 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
               type="text"
               name="sku"
               value={formData.sku}
-              onChange={(e) => handleInputChange('sku', e.target.value)}
+              onChange={(e) => handleInputChange("sku", e.target.value)}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.sku ? 'border-red-500' : 'border-gray-300'
+                errors.sku ? "border-red-500" : "border-gray-300"
               }`}
               required
             />
@@ -309,10 +351,10 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
             <textarea
               name="description"
               value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
+              onChange={(e) => handleInputChange("description", e.target.value)}
               rows="3"
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.description ? 'border-red-500' : 'border-gray-300'
+                errors.description ? "border-red-500" : "border-gray-300"
               }`}
               required
             />
@@ -327,7 +369,7 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
           <h3 className="md:col-span-3 text-lg font-semibold text-gray-900 mb-2">
             Pricing & Inventory
           </h3>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Price (₹) *
@@ -336,9 +378,9 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
               type="number"
               name="price"
               value={formData.price}
-              onChange={(e) => handleInputChange('price', e.target.value)}
+              onChange={(e) => handleInputChange("price", e.target.value)}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.price ? 'border-red-500' : 'border-gray-300'
+                errors.price ? "border-red-500" : "border-gray-300"
               }`}
               min="0"
               step="0.01"
@@ -356,7 +398,9 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
             <input
               type="number"
               value={formData.discountPrice}
-              onChange={(e) => handleInputChange('discountPrice', e.target.value)}
+              onChange={(e) =>
+                handleInputChange("discountPrice", e.target.value)
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               min="0"
               step="0.01"
@@ -371,9 +415,11 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
               type="number"
               name="countInStock"
               value={formData.countInStock}
-              onChange={(e) => handleInputChange('countInStock', e.target.value)}
+              onChange={(e) =>
+                handleInputChange("countInStock", e.target.value)
+              }
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.countInStock ? 'border-red-500' : 'border-gray-300'
+                errors.countInStock ? "border-red-500" : "border-gray-300"
               }`}
               min="0"
               required
@@ -389,18 +435,20 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
           <h3 className="md:col-span-2 text-lg font-semibold text-gray-900 mb-2">
             Categorization
           </h3>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Category *
             </label>
             <select
               value={formData.category}
-              onChange={(e) => handleInputChange('category', e.target.value)}
+              onChange={(e) => handleInputChange("category", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
               ))}
             </select>
           </div>
@@ -411,12 +459,14 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
             </label>
             <select
               value={formData.brand}
-              onChange={(e) => handleInputChange('brand', e.target.value)}
+              onChange={(e) => handleInputChange("brand", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Select Brand</option>
-              {brands.map(brand => (
-                <option key={brand} value={brand}>{brand}</option>
+              {brands.map((brand) => (
+                <option key={brand} value={brand}>
+                  {brand}
+                </option>
               ))}
             </select>
           </div>
@@ -427,12 +477,14 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
             </label>
             <select
               value={formData.collections}
-              onChange={(e) => handleInputChange('collections', e.target.value)}
+              onChange={(e) => handleInputChange("collections", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             >
-              {collections.map(collection => (
-                <option key={collection} value={collection}>{collection}</option>
+              {collections.map((collection) => (
+                <option key={collection} value={collection}>
+                  {collection}
+                </option>
               ))}
             </select>
           </div>
@@ -443,7 +495,7 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
             </label>
             <select
               value={formData.gender}
-              onChange={(e) => handleInputChange('gender', e.target.value)}
+              onChange={(e) => handleInputChange("gender", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="Men">Men</option>
@@ -458,7 +510,7 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
           <h3 className="md:col-span-2 text-lg font-semibold text-gray-900 mb-2">
             Product Attributes
           </h3>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Sizes (comma separated) *
@@ -470,7 +522,7 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
               onChange={(e) => setSizesText(e.target.value)}
               placeholder="S, M, L, XL"
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.sizes ? 'border-red-500' : 'border-gray-300'
+                errors.sizes ? "border-red-500" : "border-gray-300"
               }`}
             />
             {errors.sizes && (
@@ -489,7 +541,7 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
               onChange={(e) => setColorsText(e.target.value)}
               placeholder="Red, Blue, Green"
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.colors ? 'border-red-500' : 'border-gray-300'
+                errors.colors ? "border-red-500" : "border-gray-300"
               }`}
             />
             {errors.colors && (
@@ -504,7 +556,7 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
             <input
               type="text"
               value={formData.material}
-              onChange={(e) => handleInputChange('material', e.target.value)}
+              onChange={(e) => handleInputChange("material", e.target.value)}
               placeholder="Cotton, Polyester, etc."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -541,7 +593,7 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
                 onChange={(e) => setImagesText(e.target.value)}
                 placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.images ? 'border-red-500' : 'border-gray-300'
+                  errors.images ? "border-red-500" : "border-gray-300"
                 }`}
               />
               {errors.images && (
@@ -581,20 +633,21 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
                   Image Previews
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {imagesText.split(",").map((url, index) => (
-                    url.trim() && (
-                      <div key={index} className="relative">
-                        <img
-                          src={url.trim()}
-                          alt={`Preview ${index + 1}`}
-                          className="w-16 h-16 object-cover rounded border"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                          }}
-                        />
-                      </div>
-                    )
-                  ))}
+                  {imagesText.split(",").map(
+                    (url, index) =>
+                      url.trim() && (
+                        <div key={index} className="relative">
+                          <img
+                            src={url.trim()}
+                            alt={`Preview ${index + 1}`}
+                            className="w-16 h-16 object-cover rounded border"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                            }}
+                          />
+                        </div>
+                      )
+                  )}
                 </div>
               </div>
             )}
@@ -606,7 +659,7 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
           <h3 className="md:col-span-2 text-lg font-semibold text-gray-900 mb-2">
             Physical Properties
           </h3>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Weight (kg)
@@ -614,7 +667,7 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
             <input
               type="number"
               value={formData.weight}
-              onChange={(e) => handleInputChange('weight', e.target.value)}
+              onChange={(e) => handleInputChange("weight", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               min="0"
               step="0.01"
@@ -627,33 +680,45 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
             </label>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs text-gray-600 mb-1">Length</label>
+                <label className="block text-xs text-gray-600 mb-1">
+                  Length
+                </label>
                 <input
                   type="number"
                   value={formData.dimensions.length}
-                  onChange={(e) => handleDimensionChange('length', e.target.value)}
+                  onChange={(e) =>
+                    handleDimensionChange("length", e.target.value)
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   min="0"
                   step="0.1"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-600 mb-1">Width</label>
+                <label className="block text-xs text-gray-600 mb-1">
+                  Width
+                </label>
                 <input
                   type="number"
                   value={formData.dimensions.width}
-                  onChange={(e) => handleDimensionChange('width', e.target.value)}
+                  onChange={(e) =>
+                    handleDimensionChange("width", e.target.value)
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   min="0"
                   step="0.1"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-600 mb-1">Height</label>
+                <label className="block text-xs text-gray-600 mb-1">
+                  Height
+                </label>
                 <input
                   type="number"
                   value={formData.dimensions.height}
-                  onChange={(e) => handleDimensionChange('height', e.target.value)}
+                  onChange={(e) =>
+                    handleDimensionChange("height", e.target.value)
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   min="0"
                   step="0.1"
@@ -668,7 +733,23 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             SEO & Settings
           </h3>
-          
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Flipkart Product URL
+            </label>
+            <input
+              type="url"
+              value={formData.flipkartUrl}
+              onChange={(e) => handleInputChange("flipkartUrl", e.target.value)}
+              placeholder="https://www.flipkart.com/your-product-link"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              If provided, customers can buy this product on Flipkart
+            </p>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Meta Title
@@ -676,7 +757,7 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
             <input
               type="text"
               value={formData.metaTitle}
-              onChange={(e) => handleInputChange('metaTitle', e.target.value)}
+              onChange={(e) => handleInputChange("metaTitle", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -687,7 +768,9 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
             </label>
             <textarea
               value={formData.metaDescription}
-              onChange={(e) => handleInputChange('metaDescription', e.target.value)}
+              onChange={(e) =>
+                handleInputChange("metaDescription", e.target.value)
+              }
               rows="2"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -700,7 +783,9 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
             <input
               type="text"
               value={formData.metaKeywords}
-              onChange={(e) => handleInputChange('metaKeywords', e.target.value)}
+              onChange={(e) =>
+                handleInputChange("metaKeywords", e.target.value)
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -710,20 +795,28 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
               <input
                 type="checkbox"
                 checked={formData.isFeatured}
-                onChange={(e) => handleInputChange('isFeatured', e.target.checked)}
+                onChange={(e) =>
+                  handleInputChange("isFeatured", e.target.checked)
+                }
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm font-medium text-gray-700">Featured Product</span>
+              <span className="text-sm font-medium text-gray-700">
+                Featured Product
+              </span>
             </label>
 
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={formData.isPublished}
-                onChange={(e) => handleInputChange('isPublished', e.target.checked)}
+                onChange={(e) =>
+                  handleInputChange("isPublished", e.target.checked)
+                }
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm font-medium text-gray-700">Published</span>
+              <span className="text-sm font-medium text-gray-700">
+                Published
+              </span>
             </label>
           </div>
         </div>
@@ -749,8 +842,10 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               Saving...
             </>
+          ) : initial.name ? (
+            "Update Product"
           ) : (
-            initial.name ? "Update Product" : "Create Product"
+            "Create Product"
           )}
         </button>
       </div>

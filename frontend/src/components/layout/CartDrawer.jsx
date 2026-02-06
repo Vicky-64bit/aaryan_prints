@@ -20,7 +20,7 @@ const CartDrawer = ({ drawerOpen, toggleCartDrawer }) => {
     if (!user) {
       navigate("/login?redirect=checkout");
     } else {
-      navigate("/checkout");
+      navigate("/coming-soon");
     }
   };
 

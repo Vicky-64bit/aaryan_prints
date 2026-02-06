@@ -19,6 +19,11 @@ import { Provider } from "react-redux";
 import store from "../redux/store";
 import About from "../components/common/About";
 import Services from "../components/common/Services";
+ import FAQ from "./FAQ";
+ import PrivacyPolicy from "./PrivacyPolicy";
+ import TermsAndConditions from "./TermsAndConditions";
+ import RefundPolicy from "./RefundPolicy";
+ import ComingSoon from "./ComingSoon";
 
 function App() {
   return (
@@ -43,6 +48,13 @@ function App() {
             <Route path="/contactus" element={<Contact />} />
             <Route path="/about" element={<About />} />
             <Route path="/services" element={<Services />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+<Route path="/terms" element={<TermsAndConditions />} />
+<Route path="/refund-policy" element={<RefundPolicy />} />
+<Route path="/coming-soon" element={<ComingSoon />} />
+
+
             <Route
               path="/collections/:collection"
               element={<CollectionPage />}
