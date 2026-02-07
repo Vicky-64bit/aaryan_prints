@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 
-const FilterSidebar = ({ selectedFilters, handleFilterChange, clearAllFilters }) => {
-  const filterData = {
-    CATEGORY: ["Shirts", "T-Shirts", "Jeans", "Dresses"],
-    GENDER: ["Men", "Women", "Unisex"],
-    COLOR: ["Red", "Blue", "Green", "Black", "White"],
-    SIZE: ["S", "M", "L", "XL", "XXL"],
-    PRICE: ["Under 500", "500 - 1000", "1000 - 2000", "2000+"],
-  };
+const FilterSidebar = ({ filterData, selectedFilters, handleFilterChange, clearAllFilters }) => {
+  // const filterData = {
+  //   CATEGORY: ["Shirts", "T-Shirts", "Jeans", "Dresses"],
+  //   GENDER: ["Men", "Women", "Unisex"],
+  //   COLOR: ["Red", "Blue", "Green", "Black", "White"],
+  //   SIZE: ["S", "M", "L", "XL", "XXL"],
+  //   PRICE: ["Under 500", "500 - 1000", "1000 - 2000", "2000+"],
+  // };
 
   const [openSections, setOpenSections] = useState({
     CATEGORY: true, GENDER: false, COLOR: false, SIZE: false, PRICE: false

@@ -1,7 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import axios from "axios";
 import { registerUser } from "../redux/slice/authSlice";
 import { mergeCart } from "../redux/slice/cartSlice";
 
@@ -16,284 +15,205 @@ const Register = () => {
   const redirect = new URLSearchParams(location.search).get("redirect") || "/";
   const isCheckoutRedirect = redirect.includes("checkout");
 
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState({
-    gender: "",
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    email: "",
+    gender: "",
     mobile: "",
+    email: "",
     password: "",
+    confirmPassword: "",
   });
 
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const otpRefs = useRef([]);
-  const [otpSent, setOtpSent] = useState(false);
-  const [resendTimer, setResendTimer] = useState(30);
-  const [message, setMessage] = useState("");
+  const {
+    firstName,
+    lastName,
+    gender,
+    mobile,
+    email,
+    password,
+    confirmPassword,
+  } = formData;
 
-  /* ==========================
-     REDIRECT AFTER LOGIN
-  ========================== */
   useEffect(() => {
     if (user) {
       if (cart?.products?.length > 0 && guestId) {
-        dispatch(mergeCart({ guestId, user })).then(() =>
-          navigate(isCheckoutRedirect ? "/checkout" : "/")
-        );
+        dispatch(mergeCart({ guestId, user })).then(() => {
+          navigate(isCheckoutRedirect ? "/checkout" : redirect);
+        });
       } else {
-        navigate(isCheckoutRedirect ? "/checkout" : "/");
+        navigate(isCheckoutRedirect ? "/checkout" : redirect);
       }
     }
-  }, [user, cart, guestId, dispatch, navigate, isCheckoutRedirect]);
-
-  /* ==========================
-     RESEND OTP TIMER
-  ========================== */
-  useEffect(() => {
-    if (otpSent && resendTimer > 0) {
-      const timer = setTimeout(() => {
-        setResendTimer((prev) => prev - 1);
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [otpSent, resendTimer]);
+  }, [user, guestId, cart, navigate, dispatch, redirect, isCheckoutRedirect]);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  /* ==========================
-     SEND OTP
-  ========================== */
-  const handleSendOtp = async () => {
-    setMessage("");
+  const handleRegister = async (e) => {
+    e.preventDefault();
 
-    if (!form.mobile || !/^\d{10}$/.test(form.mobile)) {
-      return setMessage("Enter valid 10-digit mobile number");
-    }
-
-    if (!form.email) {
-      return setMessage("Email is required");
+    if (password !== confirmPassword) {
+      alert("Passwords do not match");
+      return;
     }
 
     try {
-      await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/auth/send-otp`,
-        {
-          mobile: form.mobile,
-          email: form.email,
-        }
-      );
-
-      setOtpSent(true);
-      setStep(2);
-      setResendTimer(30);
-      setOtp(["", "", "", "", "", ""]);
-
-      setTimeout(() => {
-        otpRefs.current[0]?.focus();
-      }, 100);
-
-      setMessage("OTP sent successfully");
-    } catch (err) {
-      setMessage(err.response?.data?.message || "Failed to send OTP");
+      await dispatch(
+        registerUser({
+          firstName,
+          lastName,
+          gender,
+          mobile,
+          email,
+          password,
+        })
+      ).unwrap();
+    } catch (error) {
+      alert(error?.message || "Registration failed");
     }
-  };
-
-  /* ==========================
-     OTP INPUT HANDLER
-  ========================== */
-  const handleOtpChange = (e, index) => {
-    if (!/^\d?$/.test(e.target.value)) return;
-
-    const newOtp = [...otp];
-    newOtp[index] = e.target.value;
-    setOtp(newOtp);
-
-    if (e.target.value && index < 5) {
-      otpRefs.current[index + 1]?.focus();
-    }
-  };
-
-  /* ==========================
-     REGISTER USER
-  ========================== */
-  const handleRegister = async () => {
-    setMessage("");
-
-    const enteredOtp = otp.join("");
-
-    if (enteredOtp.length !== 6) {
-      return setMessage("Enter valid 6-digit OTP");
-    }
-
-    try {
-  const result = await dispatch(
-    registerUser({ ...form, otp: enteredOtp })
-  ).unwrap();
-
-  // Only show success if dispatch resolves
-  setMessage("Registration successful");
-  console.log("Registered User:", result.user);
-
-} catch (err) {
-  setMessage(err || "Registration failed"); // only network or backend errors
-}
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center absolute top-0 left-0 w-full  bg-cover bg-no-repeat opacity-60" 
-        style={{ backgroundImage: 'url("https://pagedone.io/asset/uploads/1702362010.png")' }}>
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 mt-20">
-        <h2 className="text-xl italic text-center text-gray-700 mb-6">
-          Create Your Account
-        </h2>
+    <div className="flex items-center justify-center min-h-screen p-4 relative">
+      {/* Background */}
+      <div
+        className="absolute top-0 left-0 w-full h-full bg-cover bg-no-repeat opacity-60"
+        style={{
+          backgroundImage:
+            'url("https://pagedone.io/asset/uploads/1702362010.png")',
+        }}
+      ></div>
 
-        {message && (
-          <p className="text-center text-sm mb-4 text-orange-600">
-            {message}
-          </p>
-        )}
+      {/* Card */}
+      <div className="relative w-full max-w-sm mx-auto p-8 bg-white rounded-2xl shadow-lg z-10">
+        <div className="text-center mb-8">
+          <h2 className="text-xl font-light italic text-gray-700">
+            Create Account
+          </h2>
+        </div>
 
-        {/* STEP 1 */}
-        {step === 1 && (
-          <>
-            <div className="flex gap-4 mb-4">
-              {["Male", "Female", "Other"].map((g) => (
-                <label key={g} className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="gender"
-                    value={g}
-                    onChange={handleChange}
-                    className="accent-orange-500"
-                  />
-                  <span className="text-sm">{g}</span>
-                </label>
-              ))}
-            </div>
+        <form onSubmit={handleRegister} className="space-y-4">
+          <input
+            type="text"
+            name="firstName"
+            placeholder="First Name *"
+            value={firstName}
+            onChange={handleChange}
+            required
+            className="w-full px-3 py-2 border rounded-md"
+          />
 
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                name="firstName"
-                placeholder="First Name*"
-                onChange={handleChange}
-                className="input"
-              />
-              <input
-                name="lastName"
-                placeholder="Last Name"
-                onChange={handleChange}
-                className="input"
-              />
-            </div>
+          <input
+            type="text"
+            name="lastName"
+            placeholder="Last Name"
+            value={lastName}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border rounded-md"
+          />
 
+          <select
+            name="gender"
+            value={gender}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border rounded-md"
+          >
+            <option value="">Select Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+
+          <input
+            type="text"
+            name="mobile"
+            placeholder="Mobile Number *"
+            value={mobile}
+            onChange={handleChange}
+            required
+            className="w-full px-3 py-2 border rounded-md"
+          />
+
+          <input
+            type="email"
+            name="email"
+            placeholder="Email *"
+            value={email}
+            onChange={handleChange}
+            required
+            className="w-full px-3 py-2 border rounded-md"
+          />
+
+          {/* Password */}
+          <div className="relative">
             <input
-              name="email"
-              placeholder="Email*"
-              onChange={handleChange}
-              className="input mt-3"
-            />
-
-            <input
-              name="mobile"
-              placeholder="Mobile*"
-              maxLength="10"
-              onChange={(e) =>
-                handleChange({
-                  target: {
-                    name: "mobile",
-                    value: e.target.value.replace(/\D/g, ""),
-                  },
-                })
-              }
-              className="input mt-3"
-            />
-
-            <input
+              type={showPassword ? "text" : "password"}
               name="password"
-              type="password"
-              placeholder="Password*"
+              placeholder="Password *"
+              value={password}
               onChange={handleChange}
-              className="input mt-3"
+              required
+              className="w-full px-3 py-2 border rounded-md"
             />
-
             <button
-              onClick={handleSendOtp}
-              className="w-full mt-6 bg-orange-500 text-white py-2 rounded-full hover:bg-orange-600 transition"
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500"
             >
-              Send OTP
+              {showPassword ? "Hide" : "Show"}
             </button>
-          </>
-        )}
+          </div>
 
-        {/* STEP 2 */}
-        {step === 2 && (
-          <>
-            <p className="text-sm text-gray-600 text-center mb-3">
-              Enter the 6-digit OTP sent to your mobile
-            </p>
-
-            <div className="flex justify-between mb-4">
-              {otp.map((digit, i) => (
-                <input
-                  key={i}
-                  ref={(el) => (otpRefs.current[i] = el)}
-                  value={digit}
-                  onChange={(e) => handleOtpChange(e, i)}
-                  maxLength="1"
-                  className="w-10 h-12 text-xl text-center border rounded-md"
-                />
-              ))}
-            </div>
-
+          {/* Confirm Password */}
+          <div className="relative">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              name="confirmPassword"
+              placeholder="Confirm Password *"
+              value={confirmPassword}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 border rounded-md"
+            />
             <button
-              disabled={loading}
-              onClick={handleRegister}
-              className="w-full bg-orange-500 text-white py-2 rounded-full hover:bg-orange-600 transition"
+              type="button"
+              onClick={() =>
+                setShowConfirmPassword(!showConfirmPassword)
+              }
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500"
             >
-              {loading ? "Registering..." : "Create Account"}
+              {showConfirmPassword ? "Hide" : "Show"}
             </button>
+          </div>
 
-            <button
-              disabled={resendTimer > 0}
-              onClick={handleSendOtp}
-              className="w-full text-sm text-orange-500 mt-3"
-            >
-              {resendTimer > 0
-                ? `Resend OTP in ${resendTimer}s`
-                : "Resend OTP"}
-            </button>
-          </>
-        )}
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full mt-4 py-2 rounded-full text-white text-sm font-medium ${
+              loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-orange-600 hover:bg-orange-700"
+            }`}
+          >
+            {loading ? "Creating Account..." : "REGISTER"}
+          </button>
+        </form>
 
-        <p className="text-center text-sm mt-6">
+        <p className="mt-4 text-center text-sm text-gray-600">
           Already have an account?{" "}
           <Link
             to={`/login?redirect=${encodeURIComponent(redirect)}`}
-            className="text-orange-600 font-medium"
+            className="font-medium text-orange-600 hover:text-orange-500"
           >
             Login
           </Link>
         </p>
       </div>
-
-      <style>
-        {`
-          .input {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid #d1d5db;
-            border-radius: 9999px;
-            outline: none;
-          }
-          .input:focus {
-            border-color: #f97316;
-          }
-        `}
-      </style>
     </div>
   );
 };

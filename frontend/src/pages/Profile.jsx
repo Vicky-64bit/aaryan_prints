@@ -129,7 +129,7 @@ const Profile = () => {
             </svg>
           </div>
           <h1 className="text-xl sm:text-2xl font-semibold ml-4 text-gray-800">
-            Welcome, {user?.firstName}!
+            Welcome, {user?.firstName || "User"}!
           </h1>
 
           {/* Hamburger */}

@@ -30,11 +30,11 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
 
   const [sizesText, setSizesText] = useState((initial.sizes || []).join(","));
   const [colorsText, setColorsText] = useState(
-    (initial.colors || []).join(",")
+    (initial.colors || []).join(","),
   );
   const [tagsText, setTagsText] = useState((initial.tags || []).join(","));
   const [imagesText, setImagesText] = useState(
-    (initial.images || []).map((img) => img.url).join(",")
+    (initial.images || []).map((img) => img.url).join(","),
   );
 
   const [uploading, setUploading] = useState(false);
@@ -235,7 +235,7 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
           width: Number(formData.dimensions.width) || 0,
           height: Number(formData.dimensions.height) || 0,
         },
-        flipkartUrl:String(formData.flipkartUrl) || null,
+        flipkartUrl: String(formData.flipkartUrl) || null,
         // Ensure these are booleans
         isFeatured: Boolean(formData.isFeatured),
         isPublished: Boolean(formData.isPublished),
@@ -440,17 +440,16 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Category *
             </label>
-            <select
+            <input
+              type="text"
+              name="category"
               value={formData.category}
               onChange={(e) => handleInputChange("category", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+              placeholder="e.g. T-Shirts, Jeans, Dresses"
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                errors.category ? "border-red-500" : "border-gray-300"
+              }`}
+            />
           </div>
 
           <div>
@@ -646,7 +645,7 @@ export default function ProductForm({ initial = {}, onCancel, onSave }) {
                             }}
                           />
                         </div>
-                      )
+                      ),
                   )}
                 </div>
               </div>

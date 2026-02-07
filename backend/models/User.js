@@ -26,7 +26,7 @@ const userSchema = new mongoose.Schema({
         required: true,
         unique: true,
         trim: true,
-        match: [/.+\@.+\..+/, "Please enter a valid emal address"],
+        match: [/.+\@.+\..+/, "Please enter a valid email address"],
     },
     password: {
       type: String,
@@ -52,7 +52,6 @@ userSchema.pre("save", async function (next) {
 });
 
 // Match User entered password to Hashed password 
-
 userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };

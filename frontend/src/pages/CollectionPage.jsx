@@ -76,6 +76,48 @@ const CollectionPage = () => {
     }
     setSelectedFilters(filters);
   }, []);
+  const buildFilterData = (products) => {
+  const filters = {
+    CATEGORY: new Set(),
+    GENDER: new Set(),
+    COLOR: new Set(),
+    SIZE: new Set(),
+    PRICE: new Set(),
+  };
+
+  products.forEach((p) => {
+    if (p.category) filters.CATEGORY.add(p.category);
+    if (p.gender) filters.GENDER.add(p.gender);
+
+     if (Array.isArray(p.colors)) {
+      p.colors.forEach((c) => filters.COLOR.add(c));
+    } else if (p.color) {
+    if (p.color) filters.COLOR.add(p.color);
+    }
+
+    if (Array.isArray(p.sizes)) {
+      p.sizes.forEach((s) => filters.SIZE.add(s));
+    }
+
+    if (p.price) {
+      if (p.price < 500) filters.PRICE.add("Under 500");
+      else if (p.price <= 1000) filters.PRICE.add("500 - 1000");
+      else if (p.price <= 2000) filters.PRICE.add("1000 - 2000");
+      else filters.PRICE.add("2000+");
+    }
+  });
+
+  return Object.fromEntries(
+    Object.entries(filters).map(([k, v]) => [k, [...v]])
+  );
+};
+
+const filterData = useMemo(
+  () => buildFilterData(products),
+  [products]
+);
+
+
 
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage message={error} />;
@@ -107,6 +149,7 @@ const CollectionPage = () => {
 
             <div className="flex-1 overflow-y-auto px-6 py-4 lg:p-0 lg:sticky lg:top-32 lg:max-h-[calc(100vh-160px)]">
               <FilterSidebar
+                filterData={filterData}
                 selectedFilters={selectedFilters}
                 handleFilterChange={handleFilterChange}
                 clearAllFilters={clearAllFilters}

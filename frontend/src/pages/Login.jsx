@@ -6,7 +6,7 @@ import {mergeCart} from "../redux/slice/cartSlice";
 
 
 const Login = () => {
-  const [mobile, setMobile] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -37,13 +37,13 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    if (!mobile || !password) {
-      alert("Please enter both mobile number and password");
+    if (!email || !password) {
+      alert("Please enter both email and password");
       return;
     }
 
     try {
-      await dispatch(loginUser({ mobile, password })).unwrap();
+      await dispatch(loginUser({ email, password })).unwrap();
       navigate("/profile");
     } catch (error) {
       alert("Login failed. Please check your credentials.");
@@ -74,18 +74,16 @@ const Login = () => {
 
         {/* Form */}
         <form onSubmit={handleLogin}>
-          <label htmlFor="mobile-number" className="block text-sm font-medium text-gray-700 mb-1">
-            Mobile Number <span className="text-red-500">*</span>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            Email <span className="text-red-500">*</span>
           </label>
           <input
-            type="tel"
-            id="mobile-number"
-            placeholder="Mobile Number"
-            value={mobile}
-            onChange={(e) => setMobile(e.target.value)}
+            type="email"
+            id="email"
+            placeholder="Enter your Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-            maxLength={10}
-            pattern="[0-9]{10}"
             required
           />
 
